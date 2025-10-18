@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import { WorkoutProvider } from './contexts/WorkoutContext';
 import { ThemeProvider } from './contexts/ThemeContext';
+import { SessionProvider } from './contexts/SessionContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -14,7 +15,9 @@ root.render(
   <React.StrictMode>
     <ThemeProvider>
       <WorkoutProvider>
-        <App />
+        <SessionProvider>
+          <App />
+        </SessionProvider>
       </WorkoutProvider>
     </ThemeProvider>
   </React.StrictMode>

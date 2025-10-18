@@ -1,93 +1,146 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useWorkouts } from './contexts/WorkoutContext';
+import WorkoutList from './components/WorkoutList';
 import WorkoutOverview from './components/WorkoutOverview';
+import EditWorkout from './components/EditWorkout';
 import FocusMode from './components/FocusMode';
+import AnalyticsPage from './components/AnalyticsPage';
 import Modal from './components/Modal';
 import SettingsModal from './components/SettingsModal';
-import WorkoutList from './components/WorkoutList';
+import BottomNav from './components/BottomNav';
+import { useWorkouts } from './contexts/WorkoutContext';
 
-type View = 'list' | 'overview' | 'focus';
+type WorkoutView = 'list' | 'overview' | 'edit' | 'focus';
+type Page = 'workouts' | 'analytics';
 
 const App: React.FC = () => {
-  const { workouts, addWorkout } = useWorkouts();
-  const [currentView, setCurrentView] = useState<View>('list');
+  const [currentPage, setCurrentPage] = useState<Page>('workouts');
+  const [currentWorkoutView, setCurrentWorkoutView] = useState<WorkoutView>('list');
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { workouts, addWorkout } = useWorkouts();
 
-  const handleSelectWorkout = (workoutId: string) => {
-    setSelectedWorkoutId(workoutId);
-    setCurrentView('overview');
+  const handleSelectWorkout = (id: string) => {
+    setSelectedWorkoutId(id);
+    setCurrentWorkoutView('overview');
   };
   
-  const handleStartWorkout = (workoutId: string) => {
-    setSelectedWorkoutId(workoutId);
-    setCurrentView('focus');
+  const handleEditWorkout = (id: string) => {
+      setSelectedWorkoutId(id);
+      setCurrentWorkoutView('edit');
   };
 
+  const handleStartWorkout = (id: string) => {
+    setSelectedWorkoutId(id);
+    setCurrentWorkoutView('focus');
+  };
+  
   const handleAddWorkout = () => {
-    const newWorkout = addWorkout();
-    setSelectedWorkoutId(newWorkout.id);
-    setCurrentView('overview');
-  };
+      const newWorkout = addWorkout();
+      setSelectedWorkoutId(newWorkout.id);
+      setCurrentWorkoutView('edit'); // Go directly to edit for a new workout
+  }
 
-  const handleBackToList = () => {
-    setCurrentView('list');
+  const handleBackToList = useCallback(() => {
     setSelectedWorkoutId(null);
-  };
+    setCurrentWorkoutView('list');
+  }, []);
   
-  const handleBackToOverview = () => {
-    setCurrentView('overview');
-  };
+  const handleDoneEditing = useCallback(() => {
+    setCurrentWorkoutView('overview');
+  }, []);
+
+  const handleWorkoutDeleted = useCallback(() => {
+    setSelectedWorkoutId(null);
+    setCurrentWorkoutView('list');
+  }, []);
 
   const viewVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -20 },
+    hidden: { opacity: 0, scale: 0.98 },
+    visible: { opacity: 1, scale: 1 },
+    exit: { opacity: 0, scale: 0.98 },
   };
 
-  const renderContent = () => {
-    switch(currentView) {
-      case 'focus':
-        return selectedWorkoutId ? <FocusMode workoutId={selectedWorkoutId} onFinishWorkout={handleBackToOverview} onExit={handleBackToOverview}/> : null;
+  const renderWorkoutContent = () => {
+    switch (currentWorkoutView) {
       case 'overview':
-        return selectedWorkoutId ? <WorkoutOverview workoutId={selectedWorkoutId} onStartWorkout={handleStartWorkout} onBack={handleBackToList} onDeleted={() => handleBackToList()} /> : null;
+        if (!selectedWorkoutId) return null;
+        return (
+            <WorkoutOverview
+              workoutId={selectedWorkoutId}
+              onStartWorkout={handleStartWorkout}
+              onBack={handleBackToList}
+              onEdit={handleEditWorkout}
+            />
+        );
+      case 'edit':
+        if (!selectedWorkoutId) return null;
+        return (
+            <EditWorkout
+              workoutId={selectedWorkoutId}
+              onDone={handleDoneEditing}
+              onDeleted={handleWorkoutDeleted}
+            />
+        );
+      case 'focus':
+        if (!selectedWorkoutId) return null;
+        return (
+            <FocusMode
+              workoutId={selectedWorkoutId}
+              onFinishWorkout={handleBackToList}
+              onExit={handleBackToList}
+            />
+        );
       case 'list':
       default:
         return (
-          <>
             <WorkoutList
               workouts={workouts}
               onSelectWorkout={handleSelectWorkout}
               onAddWorkout={handleAddWorkout}
               onOpenSettings={() => setIsSettingsOpen(true)}
             />
-            <AnimatePresence>
-                {isSettingsOpen && (
-                    <Modal onClose={() => setIsSettingsOpen(false)}>
-                        <SettingsModal />
-                    </Modal>
-                )}
-            </AnimatePresence>
-          </>
         );
     }
   };
+
+  const renderPage = () => {
+    switch (currentPage) {
+        case 'analytics':
+            return <AnalyticsPage onOpenSettings={() => setIsSettingsOpen(true)} />;
+        case 'workouts':
+        default:
+            return renderWorkoutContent();
+    }
+  }
+
+  const showBottomNav = currentPage === 'analytics' || (currentPage === 'workouts' && currentWorkoutView === 'list');
 
   return (
     <div className="App">
        <AnimatePresence mode="wait">
         <motion.div
-          key={currentView + (selectedWorkoutId || '')}
+          key={currentPage === 'workouts' ? currentWorkoutView : currentPage}
           initial="hidden"
           animate="visible"
           exit="exit"
           variants={viewVariants}
           transition={{ duration: 0.2 }}
         >
-          {renderContent()}
+          {renderPage()}
         </motion.div>
       </AnimatePresence>
+       
+       <AnimatePresence>
+            {isSettingsOpen && (
+                <Modal onClose={() => setIsSettingsOpen(false)}>
+                    <SettingsModal />
+                </Modal>
+            )}
+       </AnimatePresence>
+       
+       {showBottomNav && <BottomNav currentPage={currentPage} onNavigate={setCurrentPage} />}
+
     </div>
   );
 };

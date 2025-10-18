@@ -65,3 +65,20 @@ export const Cog6ToothIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path strokeLinecap="round" strokeLinejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.113-1.113l.44-2.4c.11-.642.67-1.13 1.34-1.13h1.034c.67 0 1.23.488 1.34 1.13l.439 2.396c.553.106 1.023.57 1.113 1.113l2.4.441c.642.11.13.67.13 1.34v1.034c0 .67-.488 1.23-1.13 1.34l-2.396.439c-.106.553-.57 1.024-1.113 1.113l-.44 2.401c-.11.642-.67.13-1.34.13h-1.034c-.67 0-1.23-.488-1.34-1.13l-.439-2.399c-.553-.106-1.023-.57-1.113-1.113l-2.4-.44c-.642-.11-.13-.67-.13-1.34V8.455c0-.67.488-1.23 1.13-1.34l2.398-.439zM12 15.75a3.75 3.75 0 100-7.5 3.75 3.75 0 000 7.5z" />
     </svg>
 );
+
+export const ChevronUpIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 15.75l7.5-7.5 7.5 7.5" />
+    </svg>
+);
+
+export const GripVerticalIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" {...props}>
+        <circle cx="9" cy="6" r="1.5" />
+        <circle cx="9" cy="12" r="1.5" />
+        <circle cx="9" cy="18" r="1.5" />
+        <circle cx="15" cy="6" r="1.5" />
+        <circle cx="15" cy="12" r="1.5" />
+        <circle cx="15" cy="18" r="1.5" />
+    </svg>
+);
