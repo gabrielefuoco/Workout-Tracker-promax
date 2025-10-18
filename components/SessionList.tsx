@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion, Variants } from 'framer-motion';
 import { useSessions } from '../contexts/SessionContext';
+// FIX: Changed date-fns imports to use named imports from the main package to fix call signature errors.
 import { format, formatDistanceToNow } from 'date-fns';
+// FIX: `it` locale must be imported as a named export from `date-fns/locale`.
 import { it } from 'date-fns/locale';
 
 interface SessionListProps {

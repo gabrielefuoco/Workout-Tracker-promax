@@ -1,5 +1,5 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface VolumeChartProps {
     data: { date: string; Volume: number }[];
@@ -19,6 +19,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   };
 
 export const VolumeChart: React.FC<VolumeChartProps> = ({ data, isLoading }) => {
+
     if (isLoading) return <div className="h-80 w-full animate-pulse bg-card rounded-lg" />;
     if (!data || data.length === 0) return (
         <div className="h-80 w-full flex items-center justify-center bg-card rounded-lg text-muted-foreground">
@@ -26,9 +27,9 @@ export const VolumeChart: React.FC<VolumeChartProps> = ({ data, isLoading }) => 
         </div>
     );
 
-    const primaryColor = `hsl(${getComputedStyle(document.documentElement).getPropertyValue('--color-primary')})`;
-    const textColor = `hsl(${getComputedStyle(document.documentElement).getPropertyValue('--color-muted-foreground')})`;
-    const borderColor = `hsl(${getComputedStyle(document.documentElement).getPropertyValue('--color-border')})`;
+    const primaryColor = 'hsl(var(--color-primary))';
+    const textColor = 'hsl(var(--color-muted-foreground))';
+    const borderColor = 'hsl(var(--color-border))';
 
     return (
         <div className="w-full h-80 bg-card rounded-xl border border-border p-4">
@@ -38,7 +39,7 @@ export const VolumeChart: React.FC<VolumeChartProps> = ({ data, isLoading }) => 
                     <XAxis dataKey="date" stroke={textColor} fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke={textColor} fontSize={12} tickLine={false} axisLine={false} unit="kg" width={50} tickFormatter={(value) => new Intl.NumberFormat('it-IT', {notation: "compact", compactDisplay: "short"}).format(value)} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Line type="monotone" dataKey="Volume" stroke={primaryColor} strokeWidth={2} activeDot={{ r: 8, style: { fill: primaryColor, stroke: 'none' } }} dot={{r: 4, style: {fill: primaryColor, stroke: 'none'}}}/>
+                    <Line type="monotone" dataKey="Volume" stroke={primaryColor} strokeWidth={2} activeDot={{ r: 8, fill: primaryColor, stroke: 'none' }} dot={{r: 4, fill: primaryColor, stroke: 'none'}}/>
                 </LineChart>
             </ResponsiveContainer>
         </div>
