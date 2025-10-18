@@ -1,0 +1,5 @@
+{
+  "name": "Workout Tracker",
+  "description": "A web application to visualize and track your workouts, featuring an overview mode for planning and a focus mode for in-session guidance with rest timers.",
+  "requestFramePermissions": []
+}

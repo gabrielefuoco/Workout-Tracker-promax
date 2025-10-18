@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Workout Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://aistudiocdn.com/react@^19.2.0",
+      "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+      "react/": "https://aistudiocdn.com/react@^19.2.0/",
+      "framer-motion": "https://aistudiocdn.com/framer-motion@^11.3.1"
+    }
+  }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    :root {
+      --radius: 1rem; /* 16px */
+
+      /* Light Theme Colors (default) */
+      --color-background: 0 0% 100%;
+      --color-foreground: 222 47% 11%;
+      --color-card: 220 13% 96%;
+      --color-card-foreground: 222 47% 11%;
+      --color-popover: 0 0% 100%;
+      --color-popover-foreground: 222 47% 11%;
+      --color-secondary: 220 13% 91%;
+      --color-secondary-foreground: 222 47% 11%;
+      --color-muted: 220 13% 91%;
+      --color-muted-foreground: 220 9% 46%;
+      --color-destructive: 0 84% 60%;
+      --color-destructive-foreground: 210 40% 98%;
+      --color-border: 220 13% 91%;
+      --color-input: 220 13% 91%;
+      --color-ring: 199 92% 60%;
+      --color-scrim: 0 0% 0%;
+      --color-accent-gold: 45 96% 52%;
+
+      /* Accent Colors (set by JS) */
+      --color-primary: 199 92% 60%;
+      --color-primary-focus: 204 84% 47%;
+      --color-accent-glow-end: 263 91% 63%;
+      --color-primary-foreground: 222 47% 11%;
+    }
+
+    .dark {
+      /* Dark Theme Overrides */
+      --color-background: 222 47% 11%;
+      --color-foreground: 215 20% 97%;
+      --color-card: 222 39% 17%;
+      --color-card-foreground: 215 20% 97%;
+      --color-popover: 222 47% 11%;
+      --color-popover-foreground: 215 20% 97%;
+      --color-secondary: 215 28% 17%;
+      --color-secondary-foreground: 215 20% 97%;
+      --color-muted: 215 25% 27%;
+      --color-muted-foreground: 220 14% 65%;
+      --color-border: 215 25% 27%;
+      --color-input: 217.2 32.6% 25.5%;
+    }
+
+    /* Custom scrollbar for a more modern look */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: hsl(var(--color-card));
+    }
+    ::-webkit-scrollbar-thumb {
+      background: hsl(var(--color-muted));
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: hsl(var(--color-muted-foreground));
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: hsl(var(--color-background));
+      background-image: radial-gradient(circle at top, hsl(var(--color-card)) 0%, hsl(var(--color-background)) 70%);
+      color: hsl(var(--color-foreground));
+      overscroll-behavior-y: none; /* Prevents pull-to-refresh on mobile */
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Remove ugly number input spinners */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* Hover effect for workout cards from mockup */
+    .workout-card-link {
+        position: relative;
+        display: block;
+        text-decoration: none;
+    }
+    .workout-card-link::before {
+        content: "";
+        position: absolute;
+        inset: -1px;
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, hsl(var(--color-primary)), hsl(var(--color-accent-glow-end)));
+        z-index: 0;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    .workout-card-link:hover::before {
+        opacity: 1;
+    }
+    .workout-card {
+        position: relative;
+        z-index: 1;
+        transition: transform 0.3s ease, border-color 0.3s ease, background-color 0.3s ease;
+    }
+    .workout-card-link:hover .workout-card {
+        border-color: transparent;
+        transform: translateY(-4px);
+        background-color: hsl(var(--color-card) / 0.8);
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            border: 'hsl(var(--color-border) / <alpha-value>)',
+            input: 'hsl(var(--color-input) / <alpha-value>)',
+            ring: 'hsl(var(--color-ring) / <alpha-value>)',
+            background: 'hsl(var(--color-background) / <alpha-value>)',
+            foreground: 'hsl(var(--color-foreground) / <alpha-value>)',
+            primary: {
+              DEFAULT: 'hsl(var(--color-primary) / <alpha-value>)',
+              focus: 'hsl(var(--color-primary-focus) / <alpha-value>)',
+              foreground: 'hsl(var(--color-primary-foreground) / <alpha-value>)',
+            },
+            secondary: {
+              DEFAULT: 'hsl(var(--color-secondary) / <alpha-value>)',
+              foreground: 'hsl(var(--color-secondary-foreground) / <alpha-value>)',
+            },
+            destructive: {
+              DEFAULT: 'hsl(var(--color-destructive) / <alpha-value>)',
+              foreground: 'hsl(var(--color-destructive-foreground) / <alpha-value>)',
+            },
+            muted: {
+              DEFAULT: 'hsl(var(--color-muted) / <alpha-value>)',
+              foreground: 'hsl(var(--color-muted-foreground) / <alpha-value>)',
+            },
+            card: {
+              DEFAULT: 'hsl(var(--color-card) / <alpha-value>)',
+              foreground: 'hsl(var(--color-card-foreground) / <alpha-value>)',
+            },
+            popover: {
+              DEFAULT: 'hsl(var(--color-popover) / <alpha-value>)',
+              foreground: 'hsl(var(--color-popover-foreground) / <alpha-value>)',
+            },
+            scrim: 'hsl(var(--color-scrim) / 0.5)',
+            'accent-gold': 'hsl(var(--color-accent-gold) / <alpha-value>)'
+          },
+          borderRadius: {
+              lg: "var(--radius)",
+              md: "calc(var(--radius) - 4px)",
+              sm: "calc(var(--radius) - 8px)",
+          },
+        },
+      },
+    };
+  </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
