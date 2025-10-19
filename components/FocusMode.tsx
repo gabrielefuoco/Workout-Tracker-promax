@@ -1,95 +1,51 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSwipeable } from 'react-swipeable';
-import type { IWorkoutTemplate, IWorkoutSession, ISessionExercise, IWorkoutSet, Timestamp } from '../types';
+// import { useSwipeable } from 'react-swipeable';
+import type { IWorkoutTemplate, IWorkoutSession, IWorkoutSet } from '../types';
 import Timer from './Timer';
 import { CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
-import { useWorkoutTemplates } from '../contexts/WorkoutContext';
-import { useSessions } from '../contexts/SessionContext';
-import { calculateAggregatedData } from '../utils/sessionUtils';
-import { useActiveSession } from '../hooks/useActiveSession';
 
 interface FocusModeProps {
-  templateId: string;
-  onFinishWorkout: () => void;
+  template: IWorkoutTemplate;
+  activeSession: IWorkoutSession;
+  onSessionUpdate: (session: IWorkoutSession) => void;
+  onFinishWorkout: (session: IWorkoutSession) => void;
   onExit: () => void;
 }
 
-const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onExit }) => {
-  const { getTemplateById } = useWorkoutTemplates();
-  const { addSession } = useSessions();
-  const { activeSession, setActiveSession } = useActiveSession();
-  
-  const [template, setTemplate] = useState<IWorkoutTemplate | null>(null);
+const FocusMode: React.FC<FocusModeProps> = ({ template, activeSession, onSessionUpdate, onFinishWorkout, onExit }) => {
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetInput, setCurrentSetInput] = useState({ reps: '', weight: '', rpe: '' });
   const [isResting, setIsResting] = useState(false);
   const [restDuration, setRestDuration] = useState(90);
   const [isSummaryScreen, setIsSummaryScreen] = useState(false);
 
-  useEffect(() => {
-    const foundTemplate = getTemplateById(templateId);
-    if (foundTemplate) {
-        setTemplate(foundTemplate);
-    }
-  }, [templateId, getTemplateById]);
-
-  useEffect(() => {
-    // Se un template è caricato E non c'è una sessione attiva
-    // OPPURE se la sessione attiva non corrisponde al template corrente, ne inizia una nuova.
-    if (template && (!activeSession || activeSession.name !== template.name)) {
-      const startTime = Date.now();
-      const sessionExercises: ISessionExercise[] = template.exercises.map((ex) => ({
-        id: `sess-ex-${ex.exerciseId}-${startTime}`,
-        exerciseId: ex.exerciseId,
-        name: ex.name,
-        order: ex.order,
-        notes: ex.notes,
-        sets: [], // Inizia senza set completati
-      }));
-
-      const newSession: IWorkoutSession = {
-        id: `session-${startTime}`,
-        name: template.name,
-        startTime: startTime as Timestamp,
-        endTime: null,
-        status: 'active',
-        exercises: sessionExercises,
-        aggregatedData: null,
-      };
-      
-      setActiveSession(newSession);
-      setCurrentExerciseIndex(0);
-    }
-  }, [template, activeSession, setActiveSession]);
-
   const handleAddSet = () => {
     const reps = parseInt(currentSetInput.reps, 10);
     const weight = parseFloat(currentSetInput.weight);
     
-    if (!activeSession || isNaN(reps) || isNaN(weight)) return;
+    if (isNaN(reps) || isNaN(weight)) return;
 
     const newSet: IWorkoutSet = {
       reps,
       weight,
       rpe: currentSetInput.rpe ? parseFloat(currentSetInput.rpe) : undefined,
-      timestamp: Date.now() as Timestamp,
+      timestamp: Date.now(),
       isWarmup: false,
     };
     
-    setActiveSession(prevSession => {
-        if (!prevSession) return null;
-        const newExercises = [...prevSession.exercises];
-        const updatedExercise = { ...newExercises[currentExerciseIndex] };
-        updatedExercise.sets = [...updatedExercise.sets, newSet];
-        newExercises[currentExerciseIndex] = updatedExercise;
-        return { ...prevSession, exercises: newExercises };
-    });
+    const updatedExercises = [...activeSession.exercises];
+    const targetExercise = { ...updatedExercises[currentExerciseIndex] };
+    targetExercise.sets = [...targetExercise.sets, newSet];
+    updatedExercises[currentExerciseIndex] = targetExercise;
+
+    // Notifica al componente padre (`App.tsx`) che lo stato della sessione è cambiato
+    onSessionUpdate({ ...activeSession, exercises: updatedExercises });
 
     // Resetta l'input e avvia il timer di riposo
     setCurrentSetInput({ reps: '', weight: '', rpe: '' });
     
-    const currentTemplateExercise = template?.exercises[currentExerciseIndex];
+    const currentTemplateExercise = template.exercises[currentExerciseIndex];
     const defaultRest = currentTemplateExercise?.restSeconds ?? 90;
     setRestDuration(defaultRest);
     setIsResting(true);
@@ -107,50 +63,32 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
     }
   };
   
-  const handleFinish = async () => {
-    if (!activeSession) return;
-    
-    const endTime = Date.now();
-
-    // Filtra gli esercizi senza set registrati
-    const performedExercises = activeSession.exercises.filter(ex => ex.sets.length > 0);
-    
+  const handleFinish = () => {
     const finalSession: IWorkoutSession = {
         ...activeSession,
-        endTime: endTime as Timestamp,
-        status: 'completed',
-        exercises: performedExercises,
-        processedAt: endTime as Timestamp,
-        aggregatedData: performedExercises.length > 0
-            ? calculateAggregatedData(performedExercises, activeSession.startTime, endTime)
-            : null,
+        endTime: Date.now(),
     };
-
-    if (performedExercises.length > 0) {
-        await addSession(finalSession);
-    }
-    
-    setActiveSession(null); // Pulisce la sessione attiva dal localStorage
-    onFinishWorkout();
+    setIsSummaryScreen(true);
   };
+  
+  const handleConfirmFinish = () => {
+      const finalSession: IWorkoutSession = {
+        ...activeSession,
+        endTime: Date.now(),
+    };
+    onFinishWorkout(finalSession);
+  }
   
   const handleInputValueChange = (field: 'reps' | 'weight' | 'rpe', value: string) => {
     setCurrentSetInput(prev => ({ ...prev, [field]: value }));
   };
   
-  const handlers = useSwipeable({
-    onSwipedLeft: () => handleNextExercise(),
-    onSwipedRight: () => handlePreviousExercise(),
-    trackMouse: true
-  });
+  // const handlers = useSwipeable({
+  //   onSwipedLeft: () => handleNextExercise(),
+  //   onSwipedRight: () => handlePreviousExercise(),
+  //   trackMouse: true
+  // });
 
-  if (!activeSession || !template) {
-    return (
-        <div className="fixed inset-0 bg-background flex flex-col items-center justify-center text-foreground p-4">
-            <h2 className="text-2xl font-bold">Loading Workout...</h2>
-        </div>
-    );
-  }
 
   if (isSummaryScreen) {
     return (
@@ -162,7 +100,10 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
         >
           <h2 className="text-5xl font-bold mb-4">Workout Complete!</h2>
           <p className="text-xl text-muted-foreground mb-8">Great job!</p>
-          <button onClick={handleFinish} className="px-8 py-4 bg-gradient-to-br from-primary to-primary-focus text-primary-foreground font-bold rounded-xl shadow-lg hover:brightness-110 transition-transform transform hover:scale-105">
+          <button 
+            onClick={handleConfirmFinish} 
+            className="px-8 py-4 bg-gradient-to-br from-primary to-primary-focus text-primary-foreground font-bold rounded-xl shadow-lg hover:brightness-110 transition-transform transform hover:scale-105 disabled:opacity-70 disabled:scale-100"
+          >
             Finish & View Summary
           </button>
         </motion.div>
@@ -184,7 +125,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
   const progress = ((currentExerciseIndex + 1) / activeSession.exercises.length) * 100;
 
   return (
-    <div {...handlers} className="fixed inset-0 bg-background flex flex-col text-foreground p-4 overflow-y-auto">
+    <div /* {...handlers} */ className="fixed inset-0 bg-background flex flex-col text-foreground p-4 overflow-y-auto">
       <AnimatePresence>
         {isResting && <Timer initialSeconds={restDuration} onFinish={() => setIsResting(false)} onSkip={() => setIsResting(false)} />}
       </AnimatePresence>
@@ -296,7 +237,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
         <button onClick={handlePreviousExercise} disabled={currentExerciseIndex === 0} className="p-4 rounded-full bg-muted disabled:opacity-50 disabled:cursor-not-allowed">
             <ChevronLeftIcon className="h-8 w-8" />
         </button>
-        <button onClick={() => setIsSummaryScreen(true)} className="px-6 py-3 font-bold text-lg bg-card rounded-lg border border-border hover:border-primary transition-colors">
+        <button onClick={handleFinish} className="px-6 py-3 font-bold text-lg bg-card rounded-lg border border-border hover:border-primary transition-colors">
           Finish Workout
         </button>
         <button onClick={handleNextExercise} disabled={currentExerciseIndex >= activeSession.exercises.length - 1} className="p-4 rounded-full bg-muted disabled:opacity-50 disabled:cursor-not-allowed">

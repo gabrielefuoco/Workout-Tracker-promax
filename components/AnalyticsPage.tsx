@@ -10,15 +10,60 @@ interface AnalyticsPageProps {
 
 type Timeframe = '7d' | '30d' | 'all';
 
+const StatCardSkeleton = () => (
+    <div className="bg-card p-4 rounded-xl border border-border flex items-center gap-4 animate-pulse">
+        <div className="bg-muted w-[52px] h-[52px] rounded-lg"></div>
+        <div className="flex-1">
+            <div className="h-4 w-20 bg-muted rounded mb-2"></div>
+            <div className="h-7 w-28 bg-muted rounded"></div>
+        </div>
+    </div>
+);
+
+
 const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ onOpenSettings }) => {
     const [timeframe, setTimeframe] = useState<Timeframe>('30d');
-    const { totalVolume, volumeOverTime, totalSessions, avgDuration } = useWorkoutAnalytics(timeframe);
+    const { totalVolume, volumeOverTime, totalSessions, avgDuration, isLoading, isError } = useWorkoutAnalytics(timeframe);
 
     const timeframeOptions: { label: string; value: Timeframe }[] = [
         { label: '7 Giorni', value: '7d' },
         { label: '30 Giorni', value: '30d' },
         { label: 'Sempre', value: 'all' },
     ];
+
+    const renderStats = () => {
+        if (isLoading) {
+            return (
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatCardSkeleton />
+                    <StatCardSkeleton />
+                    <StatCardSkeleton />
+                </div>
+            )
+        }
+        if (isError) {
+             return (
+                <div className="text-center py-6 px-4 border border-dashed border-destructive/50 rounded-xl bg-destructive/10 text-destructive-foreground">
+                    <i className="ph-fill ph-warning-circle text-3xl mb-2"></i>
+                    <p className="font-semibold text-sm">Errore nel caricamento delle statistiche</p>
+                </div>
+             )
+        }
+        return (
+            <motion.div 
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                variants={{
+                    visible: { transition: { staggerChildren: 0.1 } }
+                }}
+                initial="hidden"
+                animate="visible"
+            >
+                <StatCard title="Volume Totale" value={totalVolume.toLocaleString('it-IT')} unit="kg" icon={<i className="ph-bold ph-barbell"></i>} />
+                <StatCard title="Sessioni" value={totalSessions} icon={<i className="ph-bold ph-list-checks"></i>} />
+                <StatCard title="Durata Media" value={avgDuration} unit="min" icon={<i className="ph-bold ph-timer"></i>} />
+            </motion.div>
+        )
+    }
 
     return (
         <div className="w-full max-w-[600px] mx-auto p-8 sm:p-6 min-h-screen pb-24">
@@ -62,22 +107,11 @@ const AnalyticsPage: React.FC<AnalyticsPageProps> = ({ onOpenSettings }) => {
                     animate={{ opacity: 1 }}
                     className="space-y-6"
                 >
-                    <motion.div 
-                        className="grid grid-cols-1 md:grid-cols-3 gap-4"
-                        variants={{
-                            visible: { transition: { staggerChildren: 0.1 } }
-                        }}
-                        initial="hidden"
-                        animate="visible"
-                    >
-                        <StatCard title="Volume Totale" value={totalVolume.toLocaleString('it-IT')} unit="kg" icon={<i className="ph-bold ph-barbell"></i>} />
-                        <StatCard title="Sessioni" value={totalSessions} icon={<i className="ph-bold ph-list-checks"></i>} />
-                        <StatCard title="Durata Media" value={avgDuration} unit="min" icon={<i className="ph-bold ph-timer"></i>} />
-                    </motion.div>
+                    {renderStats()}
 
                     <div>
                         <h2 className="text-xl font-bold mb-4">Volume nel Tempo</h2>
-                        <VolumeChart data={volumeOverTime} isLoading={false} />
+                        <VolumeChart data={volumeOverTime} isLoading={isLoading} />
                     </div>
                 </motion.div>
             </main>

@@ -8,7 +8,8 @@ import AnalyticsPage from './components/AnalyticsPage';
 import Modal from './components/Modal';
 import SettingsModal from './components/SettingsModal';
 import BottomNav from './components/BottomNav';
-import { useWorkoutTemplates } from './contexts/WorkoutContext';
+import { useTemplates, useAddTemplate, useSaveSession } from './hooks/dataHooks';
+import type { IWorkoutSession, ISessionExercise, IWorkoutTemplate } from './types';
 
 type WorkoutView = 'list' | 'overview' | 'edit' | 'focus';
 type Page = 'workouts' | 'analytics';
@@ -18,7 +19,22 @@ const App: React.FC = () => {
   const [currentWorkoutView, setCurrentWorkoutView] = useState<WorkoutView>('list');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { templates, addTemplate } = useWorkoutTemplates();
+
+  // Stato centralizzato per la sessione di allenamento attiva.
+  const [activeSession, setActiveSession] = useState<IWorkoutSession | null>(null);
+
+  const { data: templates } = useTemplates();
+  const saveSessionMutation = useSaveSession();
+
+  const handleNavigateToList = useCallback(() => {
+    setSelectedTemplateId(null);
+    setCurrentWorkoutView('list');
+  }, []);
+  
+  const addTemplateMutation = useAddTemplate((newTemplate) => {
+    setSelectedTemplateId(newTemplate.id);
+    setCurrentWorkoutView('edit');
+  });
 
   const handleSelectTemplate = (id: string) => {
     setSelectedTemplateId(id);
@@ -30,21 +46,38 @@ const App: React.FC = () => {
       setCurrentWorkoutView('edit');
   };
 
-  const handleStartTemplate = (id: string) => {
-    setSelectedTemplateId(id);
+  const handleStartTemplate = (templateId: string) => {
+    const template = templates?.find(t => t.id === templateId);
+    if (!template) return;
+
+    const startTime = Date.now();
+    const sessionExercises: ISessionExercise[] = template.exercises.map((ex) => ({
+      id: `sess-ex-${ex.exerciseId}-${startTime}`,
+      exerciseId: ex.exerciseId,
+      name: ex.name,
+      order: ex.order,
+      notes: ex.notes,
+      sets: [],
+    }));
+
+    const newSession: IWorkoutSession = {
+      id: `session-${startTime}`,
+      name: template.name,
+      startTime: startTime,
+      endTime: null,
+      status: 'active',
+      exercises: sessionExercises,
+      aggregatedData: null,
+    };
+
+    setActiveSession(newSession);
+    setSelectedTemplateId(template.id);
     setCurrentWorkoutView('focus');
   };
   
-  const handleAddTemplate = async () => {
-      const newTemplate = await addTemplate();
-      setSelectedTemplateId(newTemplate.id);
-      setCurrentWorkoutView('edit'); // Go directly to edit for a new workout
+  const handleAddTemplate = () => {
+    addTemplateMutation.mutate();
   }
-
-  const handleBackToList = useCallback(() => {
-    setSelectedTemplateId(null);
-    setCurrentWorkoutView('list');
-  }, []);
   
   const handleDoneEditing = useCallback(() => {
     setCurrentWorkoutView('overview');
@@ -54,6 +87,22 @@ const App: React.FC = () => {
     setSelectedTemplateId(null);
     setCurrentWorkoutView('list');
   }, []);
+  
+  const handleFinishWorkout = useCallback(async (finalSession: IWorkoutSession) => {
+      await saveSessionMutation.mutateAsync(finalSession);
+      setActiveSession(null);
+      handleNavigateToList();
+  }, [saveSessionMutation, handleNavigateToList]);
+
+  const handleExitFocusMode = useCallback(() => {
+    if (activeSession && activeSession.exercises.some(e => e.sets.length > 0)) {
+        if (!window.confirm("Attenzione: i progressi non salvati andranno persi. Uscire comunque?")) {
+            return;
+        }
+    }
+    setActiveSession(null);
+    handleNavigateToList();
+  }, [activeSession, handleNavigateToList]);
 
   const viewVariants = {
     hidden: { opacity: 0, scale: 0.98 },
@@ -69,7 +118,7 @@ const App: React.FC = () => {
             <WorkoutOverview
               templateId={selectedTemplateId}
               onStartTemplate={handleStartTemplate}
-              onBack={handleBackToList}
+              onBack={handleNavigateToList}
               onEdit={handleEditTemplate}
             />
         );
@@ -83,19 +132,27 @@ const App: React.FC = () => {
             />
         );
       case 'focus':
-        if (!selectedTemplateId) return null;
+        if (!selectedTemplateId || !activeSession) return null;
+        const template = templates?.find(t => t.id === selectedTemplateId);
+        if (!template) {
+            // Potrebbe accadere se i dati dei template non sono ancora stati caricati.
+            // In un'app più complessa, qui si gestirebbe uno stato di caricamento.
+            return null; 
+        }
         return (
             <FocusMode
-              templateId={selectedTemplateId}
-              onFinishWorkout={handleBackToList}
-              onExit={handleBackToList}
+              key={activeSession.id}
+              template={template}
+              activeSession={activeSession}
+              onSessionUpdate={setActiveSession}
+              onFinishWorkout={handleFinishWorkout}
+              onExit={handleExitFocusMode}
             />
         );
       case 'list':
       default:
         return (
             <WorkoutList
-              templates={templates}
               onSelectTemplate={handleSelectTemplate}
               onAddTemplate={handleAddTemplate}
               onOpenSettings={() => setIsSettingsOpen(true)}

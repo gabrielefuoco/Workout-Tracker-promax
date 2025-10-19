@@ -1,33 +1,50 @@
 import React, { useEffect, useState, useRef } from 'react';
-// FIX: Import Variants type from framer-motion to explicitly type variant objects.
 import { motion, Variants, AnimatePresence } from 'framer-motion';
-// FIX: Changed WorkoutTemplate to IWorkoutTemplate to match the exported type.
 import type { IWorkoutTemplate } from '../types';
+import { useTemplates } from '../hooks/dataHooks';
 
 interface WorkoutListProps {
-    templates: IWorkoutTemplate[];
     onSelectTemplate: (id: string) => void;
     onAddTemplate: () => void;
     onOpenSettings: () => void;
 }
 
-const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, onAddTemplate, onOpenSettings }) => {
+const WorkoutCardSkeleton = () => (
+    <div className="bg-card border border-border rounded-lg p-6 animate-pulse">
+        <div className="h-6 w-3/4 bg-muted rounded mb-2"></div>
+        <div className="h-4 w-1/2 bg-muted rounded mb-6"></div>
+        <div className="border-t border-border pt-4 mt-4">
+            <div className="h-4 w-1/3 bg-muted rounded mb-3"></div>
+            <div className="space-y-2">
+                <div className="h-4 w-full bg-muted rounded"></div>
+                <div className="h-4 w-full bg-muted rounded"></div>
+                <div className="h-4 w-5/6 bg-muted rounded"></div>
+            </div>
+        </div>
+        <div className="mt-6 pt-4 border-t border-border/50 flex justify-between">
+            <div className="h-5 w-1/3 bg-muted rounded"></div>
+            <div className="h-5 w-1/3 bg-muted rounded"></div>
+        </div>
+    </div>
+);
+
+
+const WorkoutList: React.FC<WorkoutListProps> = ({ onSelectTemplate, onAddTemplate, onOpenSettings }) => {
+    const { data: templates = [], isLoading, isError } = useTemplates();
     const [currentDate, setCurrentDate] = useState('');
     const [expandedWorkoutIds, setExpandedWorkoutIds] = useState<string[]>([]);
-    const pressTimer = useRef<ReturnType<typeof setTimeout>>();
+    // FIX: Initialized useRef with null and specified the type as number for browser compatibility.
+    const pressTimer = useRef<number | null>(null);
     const isLongPress = useRef(false);
 
     useEffect(() => {
         const today = new Date();
-        // FIX: Replaced `toLocaleDateString` with a more reliable `Intl.DateTimeFormat` to avoid potential environment-specific issues and ensure consistent formatting.
-        // FIX: The format() method requires a Date object argument.
-        // FIX: Pass the 'today' Date object to the format method to fix "Expected 1 arguments, but got 0" error.
         setCurrentDate(`Oggi è il ${new Intl.DateTimeFormat('it-IT', { year: 'numeric', month: 'long', day: 'numeric' }).format(today)}`);
     }, []);
 
     const handlePressStart = (workoutId: string) => {
         isLongPress.current = false;
-        pressTimer.current = setTimeout(() => {
+        pressTimer.current = window.setTimeout(() => {
             isLongPress.current = true;
             setExpandedWorkoutIds(prevIds => 
                 prevIds.includes(workoutId) 
@@ -39,7 +56,7 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
 
     const handlePressEnd = () => {
         if (pressTimer.current) {
-            clearTimeout(pressTimer.current);
+            window.clearTimeout(pressTimer.current);
         }
     };
 
@@ -102,48 +119,25 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
         }
     };
 
-    return (
-        <div className="w-full max-w-xl md:max-w-5xl lg:max-w-6xl mx-auto p-8 sm:p-6 min-h-screen pb-24">
-            <motion.header 
-              className="flex justify-between items-center mb-10"
-              variants={headerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-                <div className="flex items-center gap-4">
-                    <div className="text-5xl text-primary leading-none">
-                        <i className="ph-fill ph-user-circle"></i>
-                    </div>
-                    <div>
-                        <h1 className="text-2xl font-extrabold tracking-tight">Ciao!</h1>
-                        <p className="text-sm text-muted-foreground font-medium">{currentDate}</p>
-                    </div>
+    const renderContent = () => {
+        if (isLoading) {
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {[...Array(4)].map((_, i) => <WorkoutCardSkeleton key={i} />)}
                 </div>
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={handleToggleAll}
-                        className="text-2xl text-muted-foreground p-2 rounded-full transition-colors duration-300 hover:text-primary hover:bg-card"
-                        title={allExpanded ? 'Comprimi tutto' : 'Espandi tutto'}
-                        aria-label={allExpanded ? 'Comprimi tutto' : 'Espandi tutto'}
-                    >
-                        <AnimatePresence mode="wait">
-                            <motion.i
-                                key={allExpanded ? 'compress' : 'expand'}
-                                className={allExpanded ? "ph ph-arrows-in-simple" : "ph ph-arrows-out-simple"}
-                                initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
-                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                                exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
-                                transition={{ duration: 0.2 }}
-                            />
-                        </AnimatePresence>
-                    </button>
-                    <button onClick={onOpenSettings} className="text-2xl text-muted-foreground p-2 rounded-full transition-colors duration-300 hover:text-foreground hover:bg-card hover:rotate-45">
-                        <i className="ph ph-gear-six"></i>
-                    </button>
+            );
+        }
+        if (isError) {
+            return (
+                <div className="text-center py-12 px-4 border-2 border-dashed border-destructive/50 rounded-xl bg-destructive/10 text-destructive-foreground">
+                    <i className="ph-fill ph-warning-circle text-5xl mb-4"></i>
+                    <h3 className="text-lg font-semibold">Errore nel caricamento</h3>
+                    <p className="opacity-80 mt-2">Non è stato possibile caricare i tuoi allenamenti. Riprova più tardi.</p>
                 </div>
-            </motion.header>
-
-            <motion.main 
+            );
+        }
+        return (
+            <motion.div 
               className="grid grid-cols-1 md:grid-cols-2 gap-5"
               variants={gridVariants}
               initial="hidden"
@@ -161,7 +155,6 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
                             <a
                               href="#"
                               onMouseDown={() => handlePressStart(template.id)}
-                              // FIX: Wrapped event handlers in arrow functions to prevent passing event objects to a function that doesn't expect them.
                               onMouseUp={() => handlePressEnd()}
                               onMouseLeave={() => handlePressEnd()}
                               onTouchStart={() => handlePressStart(template.id)}
@@ -256,7 +249,54 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
                         </motion.div>
                     );
                 })}
-            </motion.main>
+            </motion.div>
+        );
+    };
+
+    return (
+        <div className="w-full max-w-xl md:max-w-5xl lg:max-w-6xl mx-auto p-8 sm:p-6 min-h-screen pb-24">
+            <motion.header 
+              className="flex justify-between items-center mb-10"
+              variants={headerVariants}
+              initial="hidden"
+              animate="visible"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="text-5xl text-primary leading-none">
+                        <i className="ph-fill ph-user-circle"></i>
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-extrabold tracking-tight">Ciao!</h1>
+                        <p className="text-sm text-muted-foreground font-medium">{currentDate}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleToggleAll}
+                        className="text-2xl text-muted-foreground p-2 rounded-full transition-colors duration-300 hover:text-primary hover:bg-card"
+                        title={allExpanded ? 'Comprimi tutto' : 'Espandi tutto'}
+                        aria-label={allExpanded ? 'Comprimi tutto' : 'Espandi tutto'}
+                    >
+                        <AnimatePresence mode="wait">
+                            <motion.i
+                                key={allExpanded ? 'compress' : 'expand'}
+                                className={allExpanded ? "ph ph-arrows-in-simple" : "ph ph-arrows-out-simple"}
+                                initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                                animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                                exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                                transition={{ duration: 0.2 }}
+                            />
+                        </AnimatePresence>
+                    </button>
+                    <button onClick={onOpenSettings} className="text-2xl text-muted-foreground p-2 rounded-full transition-colors duration-300 hover:text-foreground hover:bg-card hover:rotate-45">
+                        <i className="ph ph-gear-six"></i>
+                    </button>
+                </div>
+            </motion.header>
+
+            <main>
+                {renderContent()}
+            </main>
 
             <motion.button
                 onClick={onAddTemplate}

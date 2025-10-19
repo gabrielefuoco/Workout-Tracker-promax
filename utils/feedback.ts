@@ -39,7 +39,7 @@ const playTone = (freq: number, duration: number) => {
 export const playStartSound = () => playTone(300, 150);
 export const playFinishSound = () => {
     playTone(800, 100);
-    setTimeout(() => playTone(800, 100), 150);
+    window.setTimeout(() => playTone(800, 100), 150);
 };
 export const triggerVibration = () => {
     if ('vibrate' in navigator) {

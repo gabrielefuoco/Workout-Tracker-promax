@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import type { IWorkoutTemplate, ITemplateExercise } from '../types';
-import { ArrowLeftIcon, PlusIcon, TrashIcon } from './icons';
-import { useWorkoutTemplates } from '../contexts/WorkoutContext';
+import { ArrowLeftIcon, PlusIcon } from './icons';
+import { useTemplates, useUpdateTemplate, useDeleteTemplate } from '../hooks/dataHooks';
 import EditableExerciseCard from './EditableExercise';
 
 interface EditWorkoutProps {
@@ -12,29 +12,34 @@ interface EditWorkoutProps {
 }
 
 const EditWorkout: React.FC<EditWorkoutProps> = ({ templateId, onDone, onDeleted }) => {
-  const { getTemplateById, updateTemplate, deleteTemplate } = useWorkoutTemplates();
+  const { data: templates, isLoading: isLoadingTemplates } = useTemplates();
+  const updateTemplateMutation = useUpdateTemplate();
+  const deleteTemplateMutation = useDeleteTemplate();
+  
   const [localTemplate, setLocalTemplate] = useState<IWorkoutTemplate | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const deleteTimeoutRef = useRef<number | null>(null);
   
   useEffect(() => {
-    const template = getTemplateById(templateId);
-    if (template) {
-        setLocalTemplate(JSON.parse(JSON.stringify(template)));
+    if (templates) {
+        const template = templates.find(t => t.id === templateId);
+        if (template) {
+            setLocalTemplate(JSON.parse(JSON.stringify(template)));
+        }
     }
-  }, [templateId, getTemplateById]);
+  }, [templateId, templates]);
   
   useEffect(() => {
       return () => {
-          if (deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
+          if (deleteTimeoutRef.current) window.clearTimeout(deleteTimeoutRef.current);
       }
   }, []);
 
-  if (!localTemplate) {
+  if (isLoadingTemplates || !localTemplate) {
     return (
       <div className="bg-background text-foreground min-h-screen p-4 md:p-6 flex flex-col items-center justify-center">
-        <h2 className="text-2xl font-bold">Loading Editor...</h2>
+        <i className="ph ph-spinner animate-spin text-4xl text-primary"></i>
+        <h2 className="text-2xl font-bold mt-4">Caricamento Editor...</h2>
       </div>
     );
   }
@@ -74,16 +79,14 @@ const EditWorkout: React.FC<EditWorkoutProps> = ({ templateId, onDone, onDeleted
   
   const handleSave = async () => {
       if (!localTemplate) return;
-      setIsSaving(true);
-      await updateTemplate(localTemplate);
-      setIsSaving(false);
+      await updateTemplateMutation.mutateAsync(localTemplate);
       onDone();
   };
 
   const handleDelete = async () => {
       if (confirmingDelete) {
-        if(deleteTimeoutRef.current) clearTimeout(deleteTimeoutRef.current);
-        await deleteTemplate(templateId);
+        if(deleteTimeoutRef.current) window.clearTimeout(deleteTimeoutRef.current);
+        await deleteTemplateMutation.mutateAsync(templateId);
         onDeleted();
       } else {
         setConfirmingDelete(true);
@@ -147,10 +150,10 @@ const EditWorkout: React.FC<EditWorkoutProps> = ({ templateId, onDone, onDeleted
             </button>
             <button 
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={updateTemplateMutation.isPending}
                 className="flex-grow px-8 py-3 sm:py-4 bg-primary text-primary-foreground font-bold rounded-lg hover:bg-primary/90 transition-colors text-lg flex items-center justify-center gap-2 disabled:opacity-70"
             >
-                {isSaving ? 'Saving...' : 'Done'}
+                {updateTemplateMutation.isPending ? 'Saving...' : 'Done'}
             </button>
         </div>
       </div>

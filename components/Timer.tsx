@@ -23,15 +23,15 @@ const triggerFeedback = (type: TimerFeedback, event: 'start' | 'finish') => {
 const Timer: React.FC<TimerProps> = ({ initialSeconds, onFinish, onSkip }) => {
   const [seconds, setSeconds] = useState(initialSeconds);
   const { timerFeedback } = useTheme();
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
     triggerFeedback(timerFeedback, 'start');
     
-    intervalRef.current = setInterval(() => {
+    intervalRef.current = window.setInterval(() => {
       setSeconds(prev => {
         if (prev <= 1) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
+          if (intervalRef.current) window.clearInterval(intervalRef.current);
           triggerFeedback(timerFeedback, 'finish');
           onFinish?.();
           return 0;
@@ -41,7 +41,7 @@ const Timer: React.FC<TimerProps> = ({ initialSeconds, onFinish, onSkip }) => {
     }, 1000);
 
     return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (intervalRef.current) window.clearInterval(intervalRef.current);
     };
   }, [onFinish, timerFeedback, initialSeconds]);
   

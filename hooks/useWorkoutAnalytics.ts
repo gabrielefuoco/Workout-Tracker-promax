@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
-import { useSessions } from '../contexts/SessionContext';
-// FIX: Removed unused import 'parseISO' which was causing an error.
+import { useSessions } from '../hooks/dataHooks';
 import { subDays } from 'date-fns';
 
 type Timeframe = '7d' | '30d' | 'all';
@@ -12,7 +11,7 @@ function getStartDate(timeframe: Timeframe) {
 }
 
 export function useWorkoutAnalytics(timeframe: Timeframe = '30d') {
-  const { sessions } = useSessions();
+  const { data: sessions = [], isLoading, isError } = useSessions();
 
   const analyticsData = useMemo(() => {
     const startDate = getStartDate(timeframe);
@@ -34,5 +33,5 @@ export function useWorkoutAnalytics(timeframe: Timeframe = '30d') {
     return { sessions: filteredSessions, totalVolume, volumeOverTime, totalSessions, avgDuration };
   }, [sessions, timeframe]);
 
-  return analyticsData;
+  return { ...analyticsData, isLoading, isError };
 }

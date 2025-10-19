@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { WorkoutTemplateProvider } from './contexts/WorkoutContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { SessionProvider } from './contexts/SessionContext';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClient } from './lib/queryClient';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -13,12 +13,10 @@ if (!rootElement) {
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    <ThemeProvider>
-      <WorkoutTemplateProvider>
-        <SessionProvider>
-          <App />
-        </SessionProvider>
-      </WorkoutTemplateProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
+    </QueryClientProvider>
   </React.StrictMode>
 );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { IWorkoutTemplate, ITemplateExercise } from '../types';
-import { useWorkoutTemplates } from '../contexts/WorkoutContext';
+import type { ITemplateExercise } from '../types';
+import { useTemplates } from '../hooks/dataHooks';
 import { ArrowLeftIcon, PencilIcon, ChevronRightIcon } from './icons';
 
 // A simple, read-only exercise card for the view-only page
@@ -54,13 +54,22 @@ interface WorkoutOverviewProps {
 }
 
 const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({ templateId, onStartTemplate, onBack, onEdit }) => {
-    const { getTemplateById } = useWorkoutTemplates();
-    const template = getTemplateById(templateId);
+    const { data: templates = [], isLoading } = useTemplates();
+    const template = templates.find(t => t.id === templateId);
+
+    const renderLoading = () => (
+      <div className="bg-background text-foreground min-h-screen p-4 md:p-6 flex flex-col items-center justify-center">
+        <i className="ph ph-spinner animate-spin text-4xl text-primary"></i>
+        <h2 className="text-2xl font-bold mt-4">Caricamento...</h2>
+      </div>
+    );
+    
+    if (isLoading) return renderLoading();
 
     if (!template) {
         return (
           <div className="bg-background text-foreground min-h-screen p-4 md:p-6 flex flex-col items-center justify-center">
-            <h2 className="text-2xl font-bold">Workout not found.</h2>
+            <h2 className="text-2xl font-bold">Workout non trovato.</h2>
             <button onClick={onBack} className="mt-4 px-6 py-2 bg-muted rounded-lg">Go Back</button>
           </div>
         );
