@@ -1,5 +1,13 @@
 // src/contracts/workout.types.ts
 
+// Stato derivato dal Timestamp di Firebase, qui simulato con number
+type Timestamp = number;
+
+/**
+ * Stati possibili di una sessione di allenamento, come da protocollo.
+ */
+export type WorkoutSessionStatus = 'active' | 'processing' | 'completed' | 'failed';
+
 /**
  * Contratto per un singolo set, i dati grezzi scritti dal client.
  */
@@ -7,7 +15,7 @@ export interface IWorkoutSet {
   reps: number;
   weight: number;
   rpe?: number; // Rate of Perceived Exertion (1-10)
-  timestamp: number;
+  timestamp: Timestamp;
   isWarmup: boolean;
 }
 
@@ -42,23 +50,18 @@ export interface IAggregatedData {
 }
 
 /**
- * Stati possibili di una sessione di allenamento, come da protocollo.
- */
-export type WorkoutSessionStatus = 'active' | 'processing' | 'completed' | 'failed';
-
-/**
  * Il documento sovrano: la sessione di allenamento.
  */
 export interface IWorkoutSession {
   id: string;
   name: string;
-  startTime: number;
-  endTime: number | null; // null indica una sessione in corso
+  startTime: Timestamp;
+  endTime: Timestamp | null;
   notes?: string;
   status: WorkoutSessionStatus;
   exercises: ISessionExercise[];
   aggregatedData: IAggregatedData | null;
-  processedAt?: number | null;
+  processedAt?: Timestamp | null;
   errorMessage?: string;
 }
 
@@ -70,7 +73,7 @@ export interface ITemplateExercise {
     name: string;
     order: number;
     targetSets: number;
-    targetReps: string; // Es. "8-12"
+    targetReps: string;
     targetWeight?: number;
     restSeconds?: number;
     notes?: string;
@@ -84,8 +87,8 @@ export interface IWorkoutTemplate {
   name: string;
   description?: string;
   exercises: ITemplateExercise[];
-  createdAt: number;
-  updatedAt: number;
-  lastUsedAt: number | null;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastUsedAt: Timestamp | null;
   useCount: number;
 }

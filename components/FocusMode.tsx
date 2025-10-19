@@ -1,18 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { IWorkoutTemplate, IWorkoutSession, IWorkoutSet } from '../src/contracts/workout.types';
+import type { IWorkoutTemplate, IWorkoutSet } from '../src/contracts/workout.types';
 import Timer from './Timer';
 import { CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
-import { useActiveSession } from '../hooks/useActiveSession';
+import { useActiveSession, useAddSet, useFinishSession } from '../hooks/dataHooks';
 
 interface FocusModeProps {
   template: IWorkoutTemplate;
-  onFinishWorkout: (session: IWorkoutSession) => void;
+  onFinishWorkout: () => void;
   onExit: () => void;
 }
 
 const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit }) => {
-  const { session: activeSession, addSet, isLoading, isError } = useActiveSession();
+  const { data: session, isLoading, isError } = useActiveSession();
+  const addSetMutation = useAddSet();
+  const finishSessionMutation = useFinishSession(onFinishWorkout);
 
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetInput, setCurrentSetInput] = useState({ reps: '', weight: '', rpe: '' });
@@ -26,10 +28,10 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
     setCurrentSetInput({ reps: '', weight: '', rpe: '' });
     setIsResting(false);
     setIsSummaryScreen(false);
-  }, [activeSession?.id]);
+  }, [session?.id]);
 
   const handleAddSet = () => {
-    if (!activeSession) return;
+    if (!session) return;
     const reps = parseInt(currentSetInput.reps, 10);
     const weight = parseFloat(currentSetInput.weight);
     
@@ -43,8 +45,8 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
       isWarmup: false,
     };
     
-    const currentExerciseId = activeSession.exercises[currentExerciseIndex].id;
-    addSet({ exerciseId: currentExerciseId, set: newSet });
+    const currentExerciseId = session.exercises[currentExerciseIndex].id;
+    addSetMutation.mutate({ exerciseId: currentExerciseId, set: newSet });
 
     // Resetta l'input e avvia il timer di riposo
     setCurrentSetInput({ reps: '', weight: '', rpe: '' });
@@ -56,7 +58,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
   };
   
   const handleNextExercise = () => {
-    if (activeSession && currentExerciseIndex < activeSession.exercises.length - 1) {
+    if (session && currentExerciseIndex < session.exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
     }
   };
@@ -72,17 +74,12 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
   };
   
   const handleConfirmFinish = () => {
-    if (!activeSession) return;
-      const finalSession: IWorkoutSession = {
-        ...activeSession,
-        endTime: Date.now(),
-        status: 'completed',
-    };
-    onFinishWorkout(finalSession);
+    if (!session) return;
+    finishSessionMutation.mutate(session);
   }
 
   const handleExit = () => {
-    if (activeSession && activeSession.exercises.some(e => e.sets.length > 0)) {
+    if (session && session.exercises.some(e => e.sets.length > 0)) {
         if (!window.confirm("Attenzione: i progressi non salvati andranno persi. Uscire comunque?")) {
             return;
         }
@@ -103,7 +100,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
     );
   }
 
-  if (isError || !activeSession) {
+  if (isError || !session) {
       return (
         <div className="fixed inset-0 bg-background flex flex-col items-center justify-center text-foreground p-4 text-center">
             <h2 className="text-3xl font-bold">Errore Sessione</h2>
@@ -125,16 +122,17 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
           <p className="text-xl text-muted-foreground mb-8">Ottimo lavoro!</p>
           <button 
             onClick={handleConfirmFinish} 
+            disabled={finishSessionMutation.isPending}
             className="px-8 py-4 bg-gradient-to-br from-primary to-primary-focus text-primary-foreground font-bold rounded-xl shadow-lg hover:brightness-110 transition-transform transform hover:scale-105 disabled:opacity-70 disabled:scale-100"
           >
-            Termina e Vedi Riepilogo
+            {finishSessionMutation.isPending ? 'Salvataggio...' : 'Termina e Vedi Riepilogo'}
           </button>
         </motion.div>
       </div>
     );
   }
   
-  if (activeSession.exercises.length === 0) {
+  if (session.exercises.length === 0) {
       return (
         <div className="fixed inset-0 bg-background flex flex-col items-center justify-center text-foreground p-4">
             <h2 className="text-3xl font-bold">Questo allenamento non ha esercizi.</h2>
@@ -143,9 +141,9 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
       );
   }
 
-  const currentExercise = activeSession.exercises[currentExerciseIndex];
+  const currentExercise = session.exercises[currentExerciseIndex];
   const currentTemplateExercise = template.exercises[currentExerciseIndex];
-  const progress = ((currentExerciseIndex + 1) / activeSession.exercises.length) * 100;
+  const progress = ((currentExerciseIndex + 1) / session.exercises.length) * 100;
 
   return (
     <div className="fixed inset-0 bg-background flex flex-col text-foreground p-4 overflow-y-auto">
@@ -155,7 +153,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
       
       <header className="flex justify-between items-center mb-4">
         <div className="text-sm">
-            Esercizio <span className="font-bold">{currentExerciseIndex + 1}</span> / {activeSession.exercises.length}
+            Esercizio <span className="font-bold">{currentExerciseIndex + 1}</span> / {session.exercises.length}
         </div>
         <button onClick={handleExit} className="p-2 rounded-full hover:bg-muted">
           <XMarkIcon className="h-6 w-6" />
@@ -248,11 +246,11 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
         
         <motion.button 
             onClick={handleAddSet}
-            disabled={!currentSetInput.reps || !currentSetInput.weight}
+            disabled={!currentSetInput.reps || !currentSetInput.weight || addSetMutation.isPending}
             className="w-48 h-48 rounded-full bg-gradient-to-br from-primary to-primary-focus flex items-center justify-center shadow-lg transition-transform transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 disabled:bg-muted"
             whileTap={{ scale: 0.95 }}
         >
-            <CheckIcon className="h-24 w-24 text-primary-foreground" />
+            {addSetMutation.isPending ? <i className="ph ph-spinner animate-spin text-5xl text-primary-foreground"></i> : <CheckIcon className="h-24 w-24 text-primary-foreground" />}
         </motion.button>
       </main>
 
@@ -263,7 +261,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
         <button onClick={handleFinish} className="px-6 py-3 font-bold text-lg bg-card rounded-lg border border-border hover:border-primary transition-colors">
           Termina Allenamento
         </button>
-        <button onClick={handleNextExercise} disabled={currentExerciseIndex >= activeSession.exercises.length - 1} className="p-4 rounded-full bg-muted disabled:opacity-50 disabled:cursor-not-allowed">
+        <button onClick={handleNextExercise} disabled={currentExerciseIndex >= session.exercises.length - 1} className="p-4 rounded-full bg-muted disabled:opacity-50 disabled:cursor-not-allowed">
             <ChevronRightIcon className="h-8 w-8" />
         </button>
       </footer>

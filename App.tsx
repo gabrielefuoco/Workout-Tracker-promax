@@ -8,10 +8,9 @@ import AnalyticsPage from './components/AnalyticsPage';
 import Modal from './components/Modal';
 import SettingsModal from './components/SettingsModal';
 import BottomNav from './components/BottomNav';
-import { useTemplates, useAddTemplate, useSaveSession } from './hooks/dataHooks';
-import type { IWorkoutSession, ISessionExercise, IWorkoutTemplate } from './src/contracts/workout.types';
+import { useTemplates, useAddTemplate, useStartSession } from './hooks/dataHooks';
+import type { IWorkoutTemplate } from './src/contracts/workout.types';
 import { useNavigationStore } from './src/stores/navigationStore';
-import { useQueryClient } from '@tanstack/react-query';
 
 const App: React.FC = () => {
   const { currentPage, currentWorkoutView, selectedTemplateId, navigateTo, selectTemplate, editTemplate, startWorkout, navigateToList } = useNavigationStore();
@@ -19,59 +18,28 @@ const App: React.FC = () => {
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   
-  const queryClient = useQueryClient();
   const { data: templates } = useTemplates();
-  const saveSessionMutation = useSaveSession();
   
   const addTemplateMutation = useAddTemplate((newTemplate) => {
     editTemplate(newTemplate.id);
   });
 
+  const startSessionMutation = useStartSession(startWorkout);
+
   const handleStartTemplate = (templateId: string) => {
     const template = templates?.find(t => t.id === templateId);
     if (!template) return;
-
-    const startTime = Date.now();
-    const sessionExercises: ISessionExercise[] = template.exercises.map((ex) => ({
-      id: `sess-ex-${ex.exerciseId}-${startTime}`,
-      exerciseId: ex.exerciseId,
-      name: ex.name,
-      order: ex.order,
-      notes: ex.notes,
-      sets: [],
-    }));
-
-    const newSession: IWorkoutSession = {
-      id: `session-${startTime}`,
-      name: template.name,
-      startTime: startTime,
-      endTime: null,
-      status: 'active',
-      exercises: sessionExercises,
-      aggregatedData: null,
-    };
-
-    // Imposta la nuova sessione direttamente nella cache di TanStack Query
-    queryClient.setQueryData(['activeSession'], newSession);
-    startWorkout(template.id);
+    startSessionMutation.mutate(template);
   };
   
   const handleAddTemplate = () => {
     addTemplateMutation.mutate();
   }
   
-  const handleFinishWorkout = useCallback(async (finalSession: IWorkoutSession) => {
-      await saveSessionMutation.mutateAsync(finalSession);
-      // Invalida la query per pulire la sessione attiva dalla cache
-      queryClient.invalidateQueries({ queryKey: ['activeSession'] });
-      navigateToList();
-  }, [saveSessionMutation, navigateToList, queryClient]);
-
   const handleExitFocusMode = useCallback(() => {
-    // Pulisce la sessione attiva dalla cache (equivale a scartarla)
-    queryClient.setQueryData(['activeSession'], undefined);
+    // TODO: Aggiungere una mutation per scartare la sessione
     navigateToList();
-  }, [queryClient, navigateToList]);
+  }, [navigateToList]);
 
   const viewVariants = {
     hidden: { opacity: 0, scale: 0.98 },
@@ -109,7 +77,7 @@ const App: React.FC = () => {
         return (
             <FocusMode
               template={template}
-              onFinishWorkout={handleFinishWorkout}
+              onFinishWorkout={navigateToList}
               onExit={handleExitFocusMode}
             />
         );

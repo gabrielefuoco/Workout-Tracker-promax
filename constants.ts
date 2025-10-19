@@ -99,7 +99,7 @@ export const INITIAL_WORKOUT_SESSIONS: IWorkoutSession[] = [
         id: 'session-processing-1',
         name: 'Leg Day (Volume)',
         startTime: now - 1 * oneDay, // Yesterday
-        endTime: null,
+        endTime: now - 1 * oneDay + (60 * 60 * 1000), // endTime is set
         status: 'processing',
         exercises: [],
         aggregatedData: null,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useSessions } from '../hooks/dataHooks';
+import { useSessions } from './dataHooks';
 import { subDays } from 'date-fns';
 
 type Timeframe = '7d' | '30d' | 'all';
