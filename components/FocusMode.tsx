@@ -212,18 +212,29 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
         </motion.div>
         
         {/* Completed sets list */}
-        <div className="w-full max-w-md my-4 h-24 overflow-y-auto">
+        <div className="w-full max-w-md my-4 space-y-2 h-36 overflow-y-auto pr-2">
             {currentExercise.sets.map((set, index) => (
                 <motion.div
                     key={index}
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="flex justify-between items-center text-left p-2 bg-card rounded-md mb-2"
+                    className="flex justify-between items-center text-left p-3 bg-card rounded-lg"
                 >
                     <div className="font-bold text-primary w-8">{index + 1}</div>
-                    <div className="flex-grow"><span className="font-semibold">{set.weight}</span> kg</div>
-                    <div className="flex-grow">x <span className="font-semibold">{set.reps}</span> reps</div>
-                    {set.rpe !== undefined && <div className="text-sm text-muted-foreground">@ RPE {set.rpe}</div>}
+                    <div className="flex-grow text-lg">
+                        <span className="font-semibold text-foreground">{set.weight}</span>
+                        <span className="text-sm text-muted-foreground"> kg</span>
+                    </div>
+                    <div className="text-muted-foreground">×</div>
+                    <div className="flex-grow text-lg text-center">
+                        <span className="font-semibold text-foreground">{set.reps}</span>
+                        <span className="text-sm text-muted-foreground"> reps</span>
+                    </div>
+                    {set.rpe !== undefined && (
+                        <div className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded-md">
+                            RPE {set.rpe}
+                        </div>
+                    )}
                 </motion.div>
             ))}
             {currentExercise.sets.length === 0 && (

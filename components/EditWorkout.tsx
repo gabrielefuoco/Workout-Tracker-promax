@@ -36,7 +36,7 @@ const EditableExerciseCard: React.FC<EditableExerciseCardProps> = ({ exercise, o
                         placeholder="Exercise Name"
                         className="w-full bg-transparent text-lg font-semibold text-foreground border-none outline-none focus:ring-0"
                     />
-                    <button onClick={onDelete} className="p-2 rounded-full text-muted-foreground hover:bg-muted hover:text-destructive transition-colors">
+                    <button onClick={onDelete} aria-label={`Delete ${exercise.name}`} className="p-2 rounded-full text-muted-foreground hover:bg-muted hover:text-destructive transition-colors">
                         <TrashIcon className="h-5 w-5" />
                     </button>
                 </div>

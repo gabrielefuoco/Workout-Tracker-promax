@@ -34,6 +34,7 @@ export const INITIAL_WORKOUT_TEMPLATES: IWorkoutTemplate[] = [
         order: 2,
         targetSets: 3,
         targetReps: '12-15',
+        targetWeight: 20,
         restSeconds: 60,
         notes: "Focus on the stretch."
       },

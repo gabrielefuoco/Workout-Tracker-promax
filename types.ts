@@ -1,4 +1,4 @@
-// types.ts - LA TUA UNICA LEGGE
+// types.ts
 export type Timestamp = number;
 
 // --- TIPI PER LE SESSIONI (COSA HAI FATTO) ---
@@ -51,11 +51,11 @@ export interface IWorkoutSession {
 
 // --- TIPI PER I TEMPLATE (COSA VUOI FARE) ---
 export interface ITemplateExercise {
-    exerciseId: string; // ID di riferimento dal catalogo
+    exerciseId: string;
     name: string;
     order: number;
     targetSets: number;
-    targetReps: string; // Can be a range like "8-12"
+    targetReps: string; // Es. "8-12"
     targetWeight?: number;
     restSeconds?: number;
     notes?: string;

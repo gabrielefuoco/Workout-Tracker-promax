@@ -20,6 +20,7 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
     useEffect(() => {
         const today = new Date();
         // FIX: Replaced `toLocaleDateString` with a more reliable `Intl.DateTimeFormat` to avoid potential environment-specific issues and ensure consistent formatting.
+        // FIX: The format() method requires a Date object argument.
         setCurrentDate(`Oggi è il ${new Intl.DateTimeFormat('it-IT', { year: 'numeric', month: 'long', day: 'numeric' }).format(today)}`);
     }, []);
 

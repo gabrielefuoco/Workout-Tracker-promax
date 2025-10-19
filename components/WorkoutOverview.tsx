@@ -16,23 +16,23 @@ const ViewOnlyExerciseCard: React.FC<{
         className="bg-card rounded-xl border border-border p-4"
     >
         <h3 className="text-lg font-semibold text-foreground">{exercise.name}</h3>
-        <div className="mt-3 flex items-center gap-6 text-sm">
-            <div className="text-center">
+        <div className="mt-3 flex items-center justify-around divide-x divide-border rounded-lg bg-card/50 p-2">
+            <div className="text-center flex-1 px-2">
                 <div className="text-xs text-muted-foreground">SETS</div>
                 <div className="text-2xl font-bold text-foreground">{exercise.targetSets}</div>
             </div>
-             <div className="text-center">
+             <div className="text-center flex-1 px-2">
                 <div className="text-xs text-muted-foreground">REPS</div>
                 <div className="text-2xl font-bold text-foreground">{exercise.targetReps}</div>
             </div>
             {exercise.targetWeight != null && (
-                 <div className="text-center">
+                 <div className="text-center flex-1 px-2">
                     <div className="text-xs text-muted-foreground">WEIGHT</div>
                     <div className="text-2xl font-bold text-foreground">{exercise.targetWeight}<span className="text-base font-normal text-muted-foreground">kg</span></div>
                 </div>
             )}
              {exercise.restSeconds != null && (
-                 <div className="text-center">
+                 <div className="text-center flex-1 px-2">
                     <div className="text-xs text-muted-foreground">REST</div>
                     <div className="text-2xl font-bold text-foreground">{exercise.restSeconds}<span className="text-base font-normal text-muted-foreground">s</span></div>
                 </div>
