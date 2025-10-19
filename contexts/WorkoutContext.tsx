@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode, useState } from 'react';
 import type { IWorkoutTemplate } from '../types';
+import { INITIAL_WORKOUT_TEMPLATES } from '../constants';
 
 interface WorkoutTemplateContextType {
   templates: IWorkoutTemplate[];
@@ -12,7 +13,7 @@ interface WorkoutTemplateContextType {
 const WorkoutTemplateContext = createContext<WorkoutTemplateContextType | undefined>(undefined);
 
 export const WorkoutTemplateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [templates, setTemplates] = useState<IWorkoutTemplate[]>([]);
+  const [templates, setTemplates] = useState<IWorkoutTemplate[]>(INITIAL_WORKOUT_TEMPLATES);
 
   const getTemplateById = (id: string) => {
     return templates.find(w => w.id === id);
@@ -20,14 +21,14 @@ export const WorkoutTemplateProvider: React.FC<{ children: ReactNode }> = ({ chi
   
   const addTemplate = async (): Promise<IWorkoutTemplate> => {
     await new Promise(resolve => setTimeout(resolve, 50));
-    const now = new Date();
+    const now = Date.now();
     const newTemplate: IWorkoutTemplate = {
-      id: `template-${Date.now()}`,
+      id: `template-${now}`,
       name: 'New Workout Plan',
       description: 'A fresh start!',
       exercises: [],
-      createdAt: now as any,
-      updatedAt: now as any,
+      createdAt: now,
+      updatedAt: now,
       lastUsedAt: null,
       useCount: 0,
     };
@@ -37,11 +38,11 @@ export const WorkoutTemplateProvider: React.FC<{ children: ReactNode }> = ({ chi
 
   const updateTemplate = async (updatedTemplate: IWorkoutTemplate) => {
     await new Promise(resolve => setTimeout(resolve, 50));
-    const now = new Date();
+    const now = Date.now();
     setTemplates(prevTemplates => 
       prevTemplates.map(w => 
         w.id === updatedTemplate.id 
-          ? { ...updatedTemplate, updatedAt: now as any } 
+          ? { ...updatedTemplate, updatedAt: now } 
           : w
       )
     );

@@ -157,10 +157,11 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
                             <a
                               href="#"
                               onMouseDown={() => handlePressStart(template.id)}
-                              onMouseUp={handlePressEnd}
-                              onMouseLeave={handlePressEnd}
+                              // FIX: Wrapped event handlers in arrow functions to prevent passing event objects to a function that doesn't expect them.
+                              onMouseUp={() => handlePressEnd()}
+                              onMouseLeave={() => handlePressEnd()}
                               onTouchStart={() => handlePressStart(template.id)}
-                              onTouchEnd={handlePressEnd}
+                              onTouchEnd={() => handlePressEnd()}
                               onClick={(e) => handleClick(e, template.id)}
                               onContextMenu={(e) => e.preventDefault()}
                               className="workout-card-link w-full"

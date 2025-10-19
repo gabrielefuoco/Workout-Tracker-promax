@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// FIX: Changed WorkoutTemplate to IWorkoutTemplate to match the exported type.
+// FIX: Changed WorkoutTemplate to IWorkoutTemplate and imported Exercise to match the exported types.
 import type { IWorkoutTemplate, Exercise } from '../types';
 import { useWorkoutTemplates } from '../contexts/WorkoutContext';
 import { ArrowLeftIcon, ChevronDownIcon, ChevronRightIcon, PencilIcon } from './icons';
@@ -50,7 +50,8 @@ const ViewOnlyExerciseCard: React.FC<{
             <>
                 <div
                     className="flex justify-between items-center p-4 cursor-pointer"
-                    onClick={onToggleExpand}
+                    // FIX: The onToggleExpand function, which expects no arguments, was being called with an event argument from onClick. This has been wrapped in an arrow function to prevent a type mismatch.
+                    onClick={() => onToggleExpand()}
                 >
                     <div>
                         <h3 className="text-lg font-semibold text-foreground">{exercise.name}</h3>
@@ -133,7 +134,8 @@ const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({ templateId, onStartTe
         const start = (e: React.MouseEvent | React.TouchEvent) => {
             timeout.current = setTimeout(callback, ms);
         };
-        const clear = () => {
+        // FIX: The `clear` function for `useLongPress` was missing the event parameter, causing a type error when used with event handlers like `onMouseUp`.
+        const clear = (e: React.MouseEvent | React.TouchEvent) => {
             timeout.current && clearTimeout(timeout.current);
         };
         return {

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode, useState } from 'react';
 import type { IWorkoutSession } from '../types';
+import { INITIAL_WORKOUT_SESSIONS } from '../constants';
 
 interface SessionContextType {
   sessions: IWorkoutSession[];
@@ -9,7 +10,7 @@ interface SessionContextType {
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [sessions, setSessions] = useState<IWorkoutSession[]>([]);
+  const [sessions, setSessions] = useState<IWorkoutSession[]>(INITIAL_WORKOUT_SESSIONS);
 
   const addSession = async (session: IWorkoutSession) => {
     await new Promise(resolve => setTimeout(resolve, 50));

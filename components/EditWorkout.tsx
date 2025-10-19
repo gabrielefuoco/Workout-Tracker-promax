@@ -66,8 +66,9 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({
                 <div className="flex items-center gap-1 text-muted-foreground self-start pt-1">
                      <div
                         onPointerDown={handlePointerDown}
-                        onPointerUp={handlePointerUp}
-                        onPointerLeave={handlePointerUp}
+                        // FIX: Wrapped event handlers in arrow functions to prevent passing event objects to a function that doesn't expect them.
+                        onPointerUp={() => handlePointerUp()}
+                        onPointerLeave={() => handlePointerUp()}
                         className="cursor-grab touch-none p-2 -ml-2"
                     >
                          <i className="ph ph-list-dashes text-2xl text-muted-foreground/40 transition-colors duration-200 hover:text-muted-foreground"></i>
