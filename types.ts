@@ -1,11 +1,7 @@
-// La Single Source of Truth. Non esistono altri tipi per questi oggetti.
-import type { Timestamp as FirebaseTimestamp } from 'firebase/firestore';
-
-// Per ora, lavoriamo con numeri. Questo è un debito tecnico che estinguerai.
+// types.ts - LA TUA UNICA LEGGE
 export type Timestamp = number;
 
-// --- CONTRATTI PER LE SESSIONI (IL REPORT DI GUERRA) ---
-
+// --- TIPI PER LE SESSIONI (COSA HAI FATTO) ---
 export interface IWorkoutSet {
   reps: number;
   weight: number;
@@ -17,25 +13,25 @@ export interface IWorkoutSet {
 export interface ISessionExercise {
   id: string;
   exerciseId: string;
-  name:string;
+  name: string;
   order: number;
   notes?: string;
   sets: IWorkoutSet[];
 }
 
 export interface IAggregatedData {
-  totalVolume: number;
-  totalSets: number;
-  totalReps: number;
-  durationMinutes: number;
-  maxWeight: number;
-  prsAchieved: Array<{
-    exerciseId: string;
-    exerciseName: string;
-    description: string;
-    previousValue: number;
-    newValue: number;
-  }>;
+    totalVolume: number;
+    totalSets: number;
+    totalReps: number;
+    durationMinutes: number;
+    maxWeight: number;
+    prsAchieved: Array<{
+        exerciseId: string;
+        exerciseName: string;
+        description: string;
+        previousValue: number;
+        newValue: number;
+    }>;
 }
 
 export type WorkoutSessionStatus = 'active' | 'processing' | 'completed' | 'failed';
@@ -53,37 +49,17 @@ export interface IWorkoutSession {
   errorMessage?: string;
 }
 
-// --- CONTRATTI PER I TEMPLATE (IL PIANO DI BATTAGLIA) ---
-
-// FIX: Added IPerformedSet interface for type safety in workout templates.
-export interface IPerformedSet {
-  id: string;
-  reps: number;
-  weight: number;
-  completed: boolean;
-  rir?: number;
-}
-export type PerformedSet = IPerformedSet;
-
-// FIX: Added ISetGroup interface for type safety in workout templates.
-export interface ISetGroup {
-  id: string;
-  name: string;
-  target: string;
-  restSeconds?: number;
-  performedSets: IPerformedSet[];
-}
-export type SetGroup = ISetGroup;
-
-// FIX: Updated ITemplateExercise to use setGroups, resolving multiple errors.
+// --- TIPI PER I TEMPLATE (COSA VUOI FARE) ---
 export interface ITemplateExercise {
-  id: string;
-  name: string;
-  setGroups: ISetGroup[];
-  notes?: string;
+    exerciseId: string; // ID di riferimento dal catalogo
+    name: string;
+    order: number;
+    targetSets: number;
+    targetReps: string; // Can be a range like "8-12"
+    targetWeight?: number;
+    restSeconds?: number;
+    notes?: string;
 }
-export type Exercise = ITemplateExercise;
-
 
 export interface IWorkoutTemplate {
   id: string;

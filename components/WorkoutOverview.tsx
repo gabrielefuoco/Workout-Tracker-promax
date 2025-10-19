@@ -1,107 +1,47 @@
-import React, { useState, useRef } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-// FIX: Changed WorkoutTemplate to IWorkoutTemplate and imported Exercise to match the exported types.
-import type { IWorkoutTemplate, Exercise } from '../types';
+import type { IWorkoutTemplate, ITemplateExercise } from '../types';
 import { useWorkoutTemplates } from '../contexts/WorkoutContext';
-import { ArrowLeftIcon, ChevronDownIcon, ChevronRightIcon, PencilIcon } from './icons';
+import { ArrowLeftIcon, PencilIcon, ChevronRightIcon } from './icons';
 
 // A simple, read-only exercise card for the view-only page
 const ViewOnlyExerciseCard: React.FC<{
-    exercise: Exercise;
-    isExpanded: boolean;
-    onToggleExpand: () => void;
-    isUltraCompact: boolean;
-}> = ({ exercise, isExpanded, onToggleExpand, isUltraCompact }) => (
+    exercise: ITemplateExercise;
+}> = ({ exercise }) => (
     <motion.div
         layout
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="bg-card rounded-xl border border-border overflow-hidden"
+        className="bg-card rounded-xl border border-border p-4"
     >
-        {isUltraCompact ? (
-            <>
-                <div className="p-3">
-                    <h3 className="text-md font-semibold text-foreground">{exercise.name}</h3>
+        <h3 className="text-lg font-semibold text-foreground">{exercise.name}</h3>
+        <div className="mt-3 flex items-center gap-6 text-sm">
+            <div className="text-center">
+                <div className="text-xs text-muted-foreground">SETS</div>
+                <div className="text-2xl font-bold text-foreground">{exercise.targetSets}</div>
+            </div>
+             <div className="text-center">
+                <div className="text-xs text-muted-foreground">REPS</div>
+                <div className="text-2xl font-bold text-foreground">{exercise.targetReps}</div>
+            </div>
+            {exercise.targetWeight != null && (
+                 <div className="text-center">
+                    <div className="text-xs text-muted-foreground">WEIGHT</div>
+                    <div className="text-2xl font-bold text-foreground">{exercise.targetWeight}<span className="text-base font-normal text-muted-foreground">kg</span></div>
                 </div>
-                <div className="border-t border-border px-3 pt-2 pb-2">
-                    <ul className="space-y-1 text-sm max-h-48 overflow-y-auto pr-2 -mr-2">
-                        {exercise.setGroups.length > 0 ? (
-                            exercise.setGroups.map(sg => (
-                                <li key={sg.id} className="flex justify-between items-center gap-2">
-                                    <div className="truncate">
-                                        <span className="font-semibold text-foreground mr-2">{sg.name}:</span>
-                                        <span className="text-muted-foreground">{sg.target}</span>
-                                    </div>
-                                    {sg.restSeconds != null && (
-                                        <span className="font-mono bg-muted px-1.5 py-0.5 rounded text-xs text-muted-foreground whitespace-nowrap flex-shrink-0">
-                                            {sg.restSeconds}s Rest
-                                        </span>
-                                    )}
-                                </li>
-                            ))
-                        ) : (
-                            <li className="text-xs text-muted-foreground italic">Nessun set.</li>
-                        )}
-                    </ul>
+            )}
+             {exercise.restSeconds != null && (
+                 <div className="text-center">
+                    <div className="text-xs text-muted-foreground">REST</div>
+                    <div className="text-2xl font-bold text-foreground">{exercise.restSeconds}<span className="text-base font-normal text-muted-foreground">s</span></div>
                 </div>
-            </>
-        ) : (
-            <>
-                <div
-                    className="flex justify-between items-center p-4 cursor-pointer"
-                    // FIX: The onToggleExpand function, which expects no arguments, was being called with an event argument from onClick. This has been wrapped in an arrow function to prevent a type mismatch.
-                    onClick={() => onToggleExpand()}
-                >
-                    <div>
-                        <h3 className="text-lg font-semibold text-foreground">{exercise.name}</h3>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                            {exercise.setGroups.map(sg => (
-                                <span key={sg.id} className="text-xs font-medium px-2 py-0.5 rounded-md bg-muted text-muted-foreground whitespace-nowrap">
-                                    {sg.name}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-                    <motion.div animate={{ rotate: isExpanded ? 180 : 0 }}>
-                        <ChevronDownIcon className="h-6 w-6 text-muted-foreground" />
-                    </motion.div>
-                </div>
-
-                <AnimatePresence>
-                    {isExpanded && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        >
-                            <div className="border-t border-border">
-                                <div className="divide-y divide-border px-4">
-                                    {exercise.setGroups.length > 0 ? (
-                                        exercise.setGroups.map(sg => (
-                                            <div key={sg.id} className="flex justify-between items-center py-4">
-                                                <div>
-                                                    <p className="font-semibold text-foreground">{sg.name}</p>
-                                                    <p className="text-sm text-muted-foreground">{sg.target}</p>
-                                                </div>
-                                                {sg.restSeconds != null && (
-                                                    <div className="text-right">
-                                                        <p className="text-xs text-muted-foreground">Rest</p>
-                                                        <p className="text-xl font-bold">{sg.restSeconds}s</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground text-center py-4">No sets defined for this exercise.</p>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-            </>
+            )}
+        </div>
+        {exercise.notes && (
+            <div className="mt-3 pt-3 border-t border-border">
+                 <p className="text-sm text-muted-foreground italic">{exercise.notes}</p>
+            </div>
         )}
     </motion.div>
 );
@@ -116,8 +56,6 @@ interface WorkoutOverviewProps {
 const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({ templateId, onStartTemplate, onBack, onEdit }) => {
     const { getTemplateById } = useWorkoutTemplates();
     const template = getTemplateById(templateId);
-    const [expandedExerciseIds, setExpandedExerciseIds] = useState<string[]>([]);
-    const [isUltraCompactMode, setIsUltraCompactMode] = useState(false);
 
     if (!template) {
         return (
@@ -127,62 +65,6 @@ const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({ templateId, onStartTe
           </div>
         );
     }
-    
-    const useLongPress = (callback: () => void, ms = 400) => {
-        const timeout = useRef<ReturnType<typeof setTimeout>>();
-        // FIX: The `start` function for `useLongPress` was missing the event parameter, causing a type error when used with event handlers like `onMouseDown`.
-        const start = (e: React.MouseEvent | React.TouchEvent) => {
-            timeout.current = setTimeout(callback, ms);
-        };
-        // FIX: The `clear` function for `useLongPress` was missing the event parameter, causing a type error when used with event handlers like `onMouseUp`.
-        const clear = (e: React.MouseEvent | React.TouchEvent) => {
-            timeout.current && clearTimeout(timeout.current);
-        };
-        return {
-            onMouseDown: start,
-            onMouseUp: clear,
-            onMouseLeave: clear,
-            onTouchStart: start,
-            onTouchEnd: clear,
-            onContextMenu: (e: React.MouseEvent) => e.preventDefault()
-        };
-    };
-
-    const handleToggleExpand = (exerciseId: string) => {
-        setExpandedExerciseIds(prevIds =>
-            prevIds.includes(exerciseId)
-                ? prevIds.filter(id => id !== exerciseId)
-                : [...prevIds, exerciseId]
-        );
-    };
-    
-    const allExpanded = template.exercises.length > 0 && expandedExerciseIds.length === template.exercises.length;
-
-    const handleToggleUltraCompact = () => {
-        const newCompactState = !isUltraCompactMode;
-        setIsUltraCompactMode(newCompactState);
-        if (newCompactState) {
-            setExpandedExerciseIds(template.exercises.map(ex => ex.id));
-        } else {
-            setExpandedExerciseIds([]);
-        }
-    };
-
-    const handleToggleAll = () => {
-        if (isUltraCompactMode) {
-            setIsUltraCompactMode(false);
-            setExpandedExerciseIds([]);
-            return;
-        }
-
-        if (allExpanded) {
-            setExpandedExerciseIds([]);
-        } else {
-            setExpandedExerciseIds(template.exercises.map(ex => ex.id));
-        }
-    };
-
-    const toggleAllLongPress = useLongPress(handleToggleUltraCompact);
 
     const parseWorkoutName = (name: string) => {
       const match = name.match(/^(.*?)\s*\((.*?)\)\s*$/);
@@ -206,24 +88,6 @@ const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({ templateId, onStartTe
                         {subName && <h2 className="text-xl font-semibold text-muted-foreground">{subName}</h2>}
                     </div>
                      <div className="flex items-center gap-2">
-                        <button
-                            {...toggleAllLongPress}
-                            onClick={handleToggleAll}
-                            className={`text-2xl p-2 rounded-full transition-all duration-300 ${isUltraCompactMode ? 'text-primary bg-primary/10 rotate-90' : 'text-muted-foreground hover:text-primary hover:bg-card'}`}
-                            title={allExpanded ? 'Comprimi tutto' : 'Espandi tutto'}
-                            aria-label={allExpanded ? 'Comprimi tutto' : 'Espandi tutto'}
-                        >
-                            <AnimatePresence mode="wait">
-                                <motion.i
-                                    key={isUltraCompactMode ? 'compact' : (allExpanded ? 'compress' : 'expand')}
-                                    className={isUltraCompactMode ? "ph ph-rows" : (allExpanded ? "ph ph-arrows-in-simple" : "ph ph-arrows-out-simple")}
-                                    initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
-                                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
-                                    exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
-                                    transition={{ duration: 0.2 }}
-                                />
-                            </AnimatePresence>
-                        </button>
                         <button onClick={() => onEdit(template.id)} className="p-2 text-muted-foreground hover:text-primary transition-colors flex-shrink-0">
                             <PencilIcon className="h-6 w-6" />
                         </button>
@@ -234,11 +98,8 @@ const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({ templateId, onStartTe
                     <AnimatePresence>
                         {template.exercises.map(exercise => (
                             <ViewOnlyExerciseCard
-                                key={exercise.id}
+                                key={exercise.exerciseId}
                                 exercise={exercise}
-                                isExpanded={expandedExerciseIds.includes(exercise.id)}
-                                onToggleExpand={() => handleToggleExpand(exercise.id)}
-                                isUltraCompact={isUltraCompactMode}
                             />
                         ))}
                     </AnimatePresence>

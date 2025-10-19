@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
-import type { Exercise, SetGroup } from '../types';
 import { PlusIcon, TrashIcon } from './icons';
+
+// FIX: The types 'Exercise' and 'SetGroup' were not found in the shared types file.
+// Since this component appears to be unused and uses a different data model
+// from the rest of the app, these types are defined locally to resolve the compilation error.
+interface SetGroup {
+  id: string;
+  name: string;
+  target: string;
+  performedSets: any[];
+  restSeconds?: number;
+}
+
+interface Exercise {
+  name: string;
+  setGroups: SetGroup[];
+}
+
 
 interface EditableExerciseProps {
   exercise: Exercise;

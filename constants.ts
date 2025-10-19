@@ -10,56 +10,32 @@ export const INITIAL_WORKOUT_TEMPLATES: IWorkoutTemplate[] = [
     description: 'Focus on chest, shoulders, and triceps.',
     exercises: [
       {
-        id: 'ex-bench',
+        exerciseId: 'ex-bench',
         name: 'Bench Press',
-        setGroups: [
-          {
-            id: 'sg-bench-1',
-            name: 'Working Sets',
-            target: '3x8',
-            restSeconds: 90,
-            performedSets: [
-              { id: 'ps-bench-1', reps: 8, weight: 80, completed: false, rir: 2 },
-              { id: 'ps-bench-2', reps: 8, weight: 80, completed: false, rir: 2 },
-              { id: 'ps-bench-3', reps: 8, weight: 80, completed: false, rir: 1 },
-            ],
-          },
-        ],
+        order: 0,
+        targetSets: 3,
+        targetReps: '8-10',
+        targetWeight: 80,
+        restSeconds: 90,
+        notes: "Keep elbows tucked at 45 degrees."
       },
       {
-        id: 'ex-ohp',
+        exerciseId: 'ex-ohp',
         name: 'Overhead Press',
-        setGroups: [
-          {
-            id: 'sg-ohp-1',
-            name: 'Working Sets',
-            target: '4x10',
-            restSeconds: 75,
-            performedSets: [
-              { id: 'ps-ohp-1', reps: 10, weight: 50, completed: false, rir: 2 },
-              { id: 'ps-ohp-2', reps: 10, weight: 50, completed: false, rir: 2 },
-              { id: 'ps-ohp-3', reps: 10, weight: 50, completed: false, rir: 1 },
-              { id: 'ps-ohp-4', reps: 10, weight: 50, completed: false, rir: 1 },
-            ],
-          },
-        ],
+        order: 1,
+        targetSets: 4,
+        targetReps: '10-12',
+        targetWeight: 50,
+        restSeconds: 75,
       },
       {
-        id: 'ex-tricep-ext',
+        exerciseId: 'ex-tricep-ext',
         name: 'Tricep Extension',
-        setGroups: [
-          {
-            id: 'sg-tricep-1',
-            name: 'Working Sets',
-            target: '3x12',
-            restSeconds: 60,
-            performedSets: [
-              { id: 'ps-tricep-1', reps: 12, weight: 20, completed: false, rir: 1 },
-              { id: 'ps-tricep-2', reps: 12, weight: 20, completed: false, rir: 1 },
-              { id: 'ps-tricep-3', reps: 12, weight: 20, completed: false, rir: 0 },
-            ],
-          },
-        ],
+        order: 2,
+        targetSets: 3,
+        targetReps: '12-15',
+        restSeconds: 60,
+        notes: "Focus on the stretch."
       },
     ],
     createdAt: now - 10 * oneDay,
@@ -73,44 +49,31 @@ export const INITIAL_WORKOUT_TEMPLATES: IWorkoutTemplate[] = [
     description: 'Heavy pulls and back thickness.',
     exercises: [
         {
-            id: 'ex-deadlift',
+            exerciseId: 'ex-deadlift',
             name: 'Deadlift',
-            setGroups: [
-                {
-                    id: 'sg-deadlift-1', name: 'Top Set', target: '1x5', restSeconds: 180,
-                    performedSets: [
-                        { id: 'ps-deadlift-1', reps: 5, weight: 140, completed: false, rir: 1 }
-                    ]
-                }
-            ]
+            order: 0,
+            targetSets: 1,
+            targetReps: '5',
+            targetWeight: 140,
+            restSeconds: 180,
         },
         {
-            id: 'ex-pullup',
+            exerciseId: 'ex-pullup',
             name: 'Weighted Pull-ups',
-            setGroups: [
-                {
-                    id: 'sg-pullup-1', name: 'Working Sets', target: '3x6', restSeconds: 120,
-                    performedSets: [
-                        { id: 'ps-pullup-1', reps: 6, weight: 10, completed: false, rir: 2 },
-                        { id: 'ps-pullup-2', reps: 6, weight: 10, completed: false, rir: 2 },
-                        { id: 'ps-pullup-3', reps: 6, weight: 10, completed: false, rir: 1 },
-                    ]
-                }
-            ]
+            order: 1,
+            targetSets: 3,
+            targetReps: '6-8',
+            targetWeight: 10,
+            restSeconds: 120,
         },
         {
-            id: 'ex-row',
+            exerciseId: 'ex-row',
             name: 'Barbell Row',
-            setGroups: [
-                 {
-                    id: 'sg-row-1', name: 'Working Sets', target: '3x8', restSeconds: 90,
-                    performedSets: [
-                        { id: 'ps-row-1', reps: 8, weight: 70, completed: false, rir: 2 },
-                        { id: 'ps-row-2', reps: 8, weight: 70, completed: false, rir: 2 },
-                        { id: 'ps-row-3', reps: 8, weight: 70, completed: false, rir: 1 },
-                    ]
-                }
-            ]
+            order: 2,
+            targetSets: 3,
+            targetReps: '8-10',
+            targetWeight: 70,
+            restSeconds: 90,
         },
     ],
     createdAt: now - 20 * oneDay,

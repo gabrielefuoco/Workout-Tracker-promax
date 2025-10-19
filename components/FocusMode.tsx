@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { IWorkoutTemplate, IWorkoutSession, ISessionExercise, IWorkoutSet, Timestamp } from '../types';
 import Timer from './Timer';
-import { CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from './icons';
+import { CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { useWorkoutTemplates } from '../contexts/WorkoutContext';
 import { useSessions } from '../contexts/SessionContext';
 import { calculateAggregatedData } from '../utils/sessionUtils';
@@ -35,11 +35,11 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
   useEffect(() => {
     if (template) {
       const startTime = Date.now();
-      const sessionExercises: ISessionExercise[] = template.exercises.map((ex, index) => ({
-        id: `sess-ex-${ex.id}-${startTime}`,
-        exerciseId: ex.id,
+      const sessionExercises: ISessionExercise[] = template.exercises.map((ex) => ({
+        id: `sess-ex-${ex.exerciseId}-${startTime}`,
+        exerciseId: ex.exerciseId,
         name: ex.name,
-        order: index,
+        order: ex.order,
         notes: ex.notes,
         sets: [], // Start with no sets completed
       }));
@@ -86,7 +86,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
     setCurrentSetInput({ reps: '', weight: '', rpe: '' });
     
     const currentTemplateExercise = template?.exercises[currentExerciseIndex];
-    const defaultRest = currentTemplateExercise?.setGroups?.[0]?.restSeconds ?? 90;
+    const defaultRest = currentTemplateExercise?.restSeconds ?? 90;
     setRestDuration(defaultRest);
     setIsResting(true);
   };
@@ -110,19 +110,20 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
 
     // Filter out exercises where no sets were performed
     const performedExercises = activeSession.exercises.filter(ex => ex.sets.length > 0);
+    
+    const finalSession: IWorkoutSession = {
+        ...activeSession,
+        endTime: endTime as Timestamp,
+        status: 'completed',
+        exercises: performedExercises,
+        processedAt: endTime as Timestamp,
+        aggregatedData: performedExercises.length > 0
+            ? calculateAggregatedData(performedExercises, activeSession.startTime, endTime)
+            : null,
+    };
 
     if (performedExercises.length > 0) {
-        const aggregatedData = calculateAggregatedData(performedExercises, activeSession.startTime, endTime);
-        
-        const completedSession: IWorkoutSession = {
-            ...activeSession,
-            endTime: endTime as Timestamp,
-            status: 'completed',
-            exercises: performedExercises,
-            aggregatedData,
-            processedAt: endTime as Timestamp,
-        };
-        await addSession(completedSession);
+        await addSession(finalSession);
     }
     
     onFinishWorkout();
@@ -168,6 +169,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
   }
 
   const currentExercise = activeSession.exercises[currentExerciseIndex];
+  const currentTemplateExercise = template.exercises[currentExerciseIndex];
   const progress = ((currentExerciseIndex + 1) / activeSession.exercises.length) * 100;
 
   return (
@@ -204,6 +206,9 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
             className="w-full"
         >
             <h2 className="text-4xl md:text-5xl font-bold my-2 truncate px-4">{currentExercise.name}</h2>
+            <p className="text-muted-foreground">
+                Target: {currentTemplateExercise.targetSets} x {currentTemplateExercise.targetReps}
+            </p>
         </motion.div>
         
         {/* Completed sets list */}

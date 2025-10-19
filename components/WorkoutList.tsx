@@ -62,10 +62,12 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
         return { mainName: name, subName: `${exercisesCount} exercises` };
     };
 
-    const getLastTrainedInfo = (workoutId: string): { text: string; visible: boolean } => {
-        if (workoutId === 'workout-1') return { text: '2 giorni fa', visible: true };
-        if (workoutId === 'workout-2') return { text: '4 giorni fa', visible: true };
-        return { text: '', visible: false };
+    const getLastTrainedInfo = (workout: IWorkoutTemplate): { text: string; visible: boolean } => {
+        if (!workout.lastUsedAt) return { text: '', visible: false };
+        const daysAgo = Math.round((Date.now() - workout.lastUsedAt) / (1000 * 60 * 60 * 24));
+        if (daysAgo === 0) return { text: 'Today', visible: true };
+        if (daysAgo === 1) return { text: 'Yesterday', visible: true };
+        return { text: `${daysAgo} days ago`, visible: true };
     };
 
     const gridVariants = {
@@ -147,8 +149,8 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
             >
                 {templates.map((template) => {
                     const { mainName, subName } = parseWorkoutName(template.name, template.exercises.length);
-                    const lastTrained = getLastTrainedInfo(template.id);
-                    const totalSetGroups = template.exercises.reduce((sum, ex) => sum + ex.setGroups.length, 0);
+                    const lastTrained = getLastTrainedInfo(template);
+                    const totalSets = template.exercises.reduce((sum, ex) => sum + ex.targetSets, 0);
                     const exercisesToShow = 3;
                     const isExpanded = expandedWorkoutIds.includes(template.id);
 
@@ -200,7 +202,7 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
                                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Tutti gli Esercizi</p>
                                                         <ul className="flex flex-col gap-2.5 max-h-48 overflow-y-auto pr-2">
                                                         {template.exercises.map(ex => (
-                                                            <li key={ex.id} className="text-sm text-foreground flex items-center gap-2">
+                                                            <li key={ex.exerciseId} className="text-sm text-foreground flex items-center gap-2">
                                                             <i className="ph-bold ph-dot text-primary text-xs"></i><span className="truncate">{ex.name}</span>
                                                             </li>
                                                         ))}
@@ -211,7 +213,7 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
                                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Esercizi Principali</p>
                                                         <ul className="flex flex-col gap-2.5">
                                                             {template.exercises.slice(0, exercisesToShow).map(ex => (
-                                                                <li key={ex.id} className="text-sm text-foreground flex items-center gap-2">
+                                                                <li key={ex.exerciseId} className="text-sm text-foreground flex items-center gap-2">
                                                                     <i className="ph-bold ph-dot text-primary text-xs"></i><span className="truncate">{ex.name}</span>
                                                                 </li>
                                                             ))}
@@ -244,7 +246,7 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
                                         </div>
                                         <div className="flex items-center gap-1.5 text-muted-foreground">
                                             <i className="ph ph-stack"></i>
-                                            <span className="font-medium">{totalSetGroups} Serie</span>
+                                            <span className="font-medium">{totalSets} Serie</span>
                                         </div>
                                     </div>
                                 </div>
