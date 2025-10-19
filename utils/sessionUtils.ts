@@ -26,6 +26,6 @@ export const calculateAggregatedData = (exercises: ISessionExercise[], startTime
         totalReps,
         durationMinutes: Math.round((endTime - startTime) / (1000 * 60)),
         maxWeight,
-        prsAchieved: [] // PR logic to be implemented later
+        // FIX: Removed 'prsAchieved' as it does not exist in the IAggregatedData interface.
     };
 };

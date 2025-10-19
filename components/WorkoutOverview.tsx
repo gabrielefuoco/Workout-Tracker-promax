@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { WorkoutTemplate, Exercise } from '../types';
-import { useTemplates } from '../contexts/WorkoutContext';
+// FIX: Changed WorkoutTemplate to IWorkoutTemplate to match the exported type.
+import type { IWorkoutTemplate, Exercise } from '../types';
+import { useWorkoutTemplates } from '../contexts/WorkoutContext';
 import { ArrowLeftIcon, ChevronDownIcon, ChevronRightIcon, PencilIcon } from './icons';
 
 // A simple, read-only exercise card for the view-only page
@@ -112,7 +113,7 @@ interface WorkoutOverviewProps {
 }
 
 const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({ templateId, onStartTemplate, onBack, onEdit }) => {
-    const { getTemplateById } = useTemplates();
+    const { getTemplateById } = useWorkoutTemplates();
     const template = getTemplateById(templateId);
     const [expandedExerciseIds, setExpandedExerciseIds] = useState<string[]>([]);
     const [isUltraCompactMode, setIsUltraCompactMode] = useState(false);
@@ -128,7 +129,8 @@ const WorkoutOverview: React.FC<WorkoutOverviewProps> = ({ templateId, onStartTe
     
     const useLongPress = (callback: () => void, ms = 400) => {
         const timeout = useRef<ReturnType<typeof setTimeout>>();
-        const start = () => {
+        // FIX: The `start` function for `useLongPress` was missing the event parameter, causing a type error when used with event handlers like `onMouseDown`.
+        const start = (e: React.MouseEvent | React.TouchEvent) => {
             timeout.current = setTimeout(callback, ms);
         };
         const clear = () => {

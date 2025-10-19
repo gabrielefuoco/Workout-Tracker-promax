@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
-import type { WorkoutTemplate, Exercise, SetGroup } from '../types';
+// FIX: Changed WorkoutTemplate to IWorkoutTemplate to match the exported type.
+import type { IWorkoutTemplate, Exercise, SetGroup } from '../types';
 import { ArrowLeftIcon, PlusIcon, TrashIcon, ChevronDownIcon, PencilIcon, SaveIcon, ChevronUpIcon } from './icons';
-import { useTemplates } from '../contexts/WorkoutContext';
+import { useWorkoutTemplates } from '../contexts/WorkoutContext';
 
 interface ExerciseCardProps {
     exercise: Exercise;
@@ -192,7 +193,7 @@ interface EditWorkoutProps {
 }
 
 const EditWorkout: React.FC<EditWorkoutProps> = ({ templateId, onDone, onDeleted }) => {
-  const { getTemplateById, updateTemplate, deleteTemplate } = useTemplates();
+  const { getTemplateById, updateTemplate, deleteTemplate } = useWorkoutTemplates();
   const template = getTemplateById(templateId);
 
   const [isEditingName, setIsEditingName] = useState(false);
@@ -241,7 +242,8 @@ const EditWorkout: React.FC<EditWorkoutProps> = ({ templateId, onDone, onDeleted
         // e.preventDefault(); // This can prevent click events, be careful
         timeout.current = setTimeout(callback, ms);
     };
-    const clear = () => {
+    // FIX: The `clear` function was missing an event parameter, causing a type mismatch when assigned to event handlers like `onMouseUp`.
+    const clear = (e: React.MouseEvent | React.TouchEvent) => {
         timeout.current && clearTimeout(timeout.current);
     };
     return {
@@ -407,10 +409,10 @@ const EditWorkout: React.FC<EditWorkoutProps> = ({ templateId, onDone, onDeleted
     }
   };
 
-  const handleDeleteWorkout = () => {
+  const handleDeleteWorkout = async () => {
     if (confirmingDeleteWorkout) {
       if (deleteWorkoutTimeoutRef.current) clearTimeout(deleteWorkoutTimeoutRef.current);
-      deleteTemplate(template.id);
+      await deleteTemplate(template.id);
       onDeleted();
     } else {
       setConfirmingDeleteWorkout(true);

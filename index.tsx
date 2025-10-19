@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import { TemplateProvider } from './contexts/WorkoutContext';
+import { WorkoutTemplateProvider } from './contexts/WorkoutContext';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { SessionProvider } from './contexts/SessionContext';
 
@@ -14,11 +14,11 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <ThemeProvider>
-      <TemplateProvider>
+      <WorkoutTemplateProvider>
         <SessionProvider>
           <App />
         </SessionProvider>
-      </TemplateProvider>
+      </WorkoutTemplateProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

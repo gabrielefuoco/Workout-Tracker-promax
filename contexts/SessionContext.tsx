@@ -1,19 +1,18 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage';
-import { INITIAL_SESSIONS } from '../constants';
+import React, { createContext, useContext, ReactNode, useState } from 'react';
 import type { IWorkoutSession } from '../types';
 
 interface SessionContextType {
   sessions: IWorkoutSession[];
-  addSession: (session: IWorkoutSession) => void;
+  addSession: (session: IWorkoutSession) => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [sessions, setSessions] = useLocalStorage<IWorkoutSession[]>('sessions', INITIAL_SESSIONS);
+  const [sessions, setSessions] = useState<IWorkoutSession[]>([]);
 
-  const addSession = (session: IWorkoutSession) => {
+  const addSession = async (session: IWorkoutSession) => {
+    await new Promise(resolve => setTimeout(resolve, 50));
     setSessions(prevSessions => [session, ...prevSessions]);
   };
 

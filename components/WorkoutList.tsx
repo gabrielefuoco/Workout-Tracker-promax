@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 // FIX: Import Variants type from framer-motion to explicitly type variant objects.
 import { motion, Variants, AnimatePresence } from 'framer-motion';
-import type { WorkoutTemplate } from '../types';
+// FIX: Changed WorkoutTemplate to IWorkoutTemplate to match the exported type.
+import type { IWorkoutTemplate } from '../types';
 
 interface WorkoutListProps {
-    templates: WorkoutTemplate[];
+    templates: IWorkoutTemplate[];
     onSelectTemplate: (id: string) => void;
     onAddTemplate: () => void;
     onOpenSettings: () => void;
@@ -18,8 +19,8 @@ const WorkoutList: React.FC<WorkoutListProps> = ({ templates, onSelectTemplate, 
 
     useEffect(() => {
         const today = new Date();
-        const options = { year: 'numeric', month: 'long', day: 'numeric' } as const;
-        setCurrentDate(`Oggi è il ${today.toLocaleDateString('it-IT', options)}`);
+        // FIX: Replaced `toLocaleDateString` with a more reliable `Intl.DateTimeFormat` to avoid potential environment-specific issues and ensure consistent formatting.
+        setCurrentDate(`Oggi è il ${new Intl.DateTimeFormat('it-IT', { year: 'numeric', month: 'long', day: 'numeric' }).format(today)}`);
     }, []);
 
     const handlePressStart = (workoutId: string) => {

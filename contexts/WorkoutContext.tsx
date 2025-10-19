@@ -1,87 +1,56 @@
-import React, { createContext, useContext, ReactNode } from 'react';
-import useLocalStorage from '../hooks/useLocalStorage';
-import { INITIAL_TEMPLATES } from '../constants';
-import type { WorkoutTemplate, PerformedSet } from '../types';
+import React, { createContext, useContext, ReactNode, useState } from 'react';
+import type { IWorkoutTemplate } from '../types';
 
-interface TemplateContextType {
-  templates: WorkoutTemplate[];
-  getTemplateById: (id: string) => WorkoutTemplate | undefined;
-  addTemplate: () => WorkoutTemplate;
-  updateTemplate: (updatedTemplate: WorkoutTemplate) => void;
-  deleteTemplate: (templateId: string) => void;
-  updateTemplateSet: (
-    templateId: string, 
-    exerciseId: string, 
-    setGroupId: string, 
-    setId: string, 
-    updates: Partial<PerformedSet>
-  ) => void;
+interface WorkoutTemplateContextType {
+  templates: IWorkoutTemplate[];
+  getTemplateById: (id: string) => IWorkoutTemplate | undefined;
+  addTemplate: () => Promise<IWorkoutTemplate>;
+  updateTemplate: (updatedTemplate: IWorkoutTemplate) => Promise<void>;
+  deleteTemplate: (templateId: string) => Promise<void>;
 }
 
-const TemplateContext = createContext<TemplateContextType | undefined>(undefined);
+const WorkoutTemplateContext = createContext<WorkoutTemplateContextType | undefined>(undefined);
 
-export const TemplateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [templates, setTemplates] = useLocalStorage<WorkoutTemplate[]>('workout-templates', INITIAL_TEMPLATES);
+export const WorkoutTemplateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [templates, setTemplates] = useState<IWorkoutTemplate[]>([]);
 
   const getTemplateById = (id: string) => {
     return templates.find(w => w.id === id);
   };
   
-  const addTemplate = (): WorkoutTemplate => {
-    const newTemplate: WorkoutTemplate = {
-      id: `workout-${Date.now()}`,
-      name: 'New Workout',
-      exercises: []
+  const addTemplate = async (): Promise<IWorkoutTemplate> => {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const now = new Date();
+    const newTemplate: IWorkoutTemplate = {
+      id: `template-${Date.now()}`,
+      name: 'New Workout Plan',
+      description: 'A fresh start!',
+      exercises: [],
+      createdAt: now as any,
+      updatedAt: now as any,
+      lastUsedAt: null,
+      useCount: 0,
     };
-    setTemplates([...templates, newTemplate]);
+    setTemplates(prev => [...prev, newTemplate]);
     return newTemplate;
   };
 
-  const updateTemplate = (updatedTemplate: WorkoutTemplate) => {
-    setTemplates(templates.map(w => w.id === updatedTemplate.id ? updatedTemplate : w));
-  };
-  
-  const deleteTemplate = (templateId: string) => {
-    setTemplates(templates.filter(w => w.id !== templateId));
-  }
-
-  const updateTemplateSet = (
-    templateId: string, 
-    exerciseId: string, 
-    setGroupId: string, 
-    setId: string, 
-    updates: Partial<PerformedSet>
-  ) => {
+  const updateTemplate = async (updatedTemplate: IWorkoutTemplate) => {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    const now = new Date();
     setTemplates(prevTemplates => 
-      prevTemplates.map(template => {
-        if (template.id !== templateId) return template;
-        
-        return {
-          ...template,
-          exercises: template.exercises.map(exercise => {
-            if (exercise.id !== exerciseId) return exercise;
-
-            return {
-              ...exercise,
-              setGroups: exercise.setGroups.map(setGroup => {
-                if (setGroup.id !== setGroupId) return setGroup;
-                
-                return {
-                  ...setGroup,
-                  performedSets: setGroup.performedSets.map(pSet => {
-                    if (pSet.id !== setId) return pSet;
-                    
-                    return { ...pSet, ...updates };
-                  })
-                }
-              })
-            }
-          })
-        }
-      })
+      prevTemplates.map(w => 
+        w.id === updatedTemplate.id 
+          ? { ...updatedTemplate, updatedAt: now as any } 
+          : w
+      )
     );
   };
-
+  
+  const deleteTemplate = async (templateId: string) => {
+    await new Promise(resolve => setTimeout(resolve, 50));
+    setTemplates(prevTemplates => prevTemplates.filter(w => w.id !== templateId));
+  };
 
   const value = {
     templates,
@@ -89,20 +58,19 @@ export const TemplateProvider: React.FC<{ children: ReactNode }> = ({ children }
     addTemplate,
     updateTemplate,
     deleteTemplate,
-    updateTemplateSet,
   };
 
   return (
-    <TemplateContext.Provider value={value}>
+    <WorkoutTemplateContext.Provider value={value}>
       {children}
-    </TemplateContext.Provider>
+    </WorkoutTemplateContext.Provider>
   );
 };
 
-export const useTemplates = (): TemplateContextType => {
-  const context = useContext(TemplateContext);
+export const useWorkoutTemplates = (): WorkoutTemplateContextType => {
+  const context = useContext(WorkoutTemplateContext);
   if (context === undefined) {
-    throw new Error('useTemplates must be used within a TemplateProvider');
+    throw new Error('useWorkoutTemplates must be used within a WorkoutTemplateProvider');
   }
   return context;
 };

@@ -8,7 +8,7 @@ import AnalyticsPage from './components/AnalyticsPage';
 import Modal from './components/Modal';
 import SettingsModal from './components/SettingsModal';
 import BottomNav from './components/BottomNav';
-import { useTemplates } from './contexts/WorkoutContext';
+import { useWorkoutTemplates } from './contexts/WorkoutContext';
 
 type WorkoutView = 'list' | 'overview' | 'edit' | 'focus';
 type Page = 'workouts' | 'analytics';
@@ -18,7 +18,7 @@ const App: React.FC = () => {
   const [currentWorkoutView, setCurrentWorkoutView] = useState<WorkoutView>('list');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { templates, addTemplate } = useTemplates();
+  const { templates, addTemplate } = useWorkoutTemplates();
 
   const handleSelectTemplate = (id: string) => {
     setSelectedTemplateId(id);
@@ -35,8 +35,8 @@ const App: React.FC = () => {
     setCurrentWorkoutView('focus');
   };
   
-  const handleAddTemplate = () => {
-      const newTemplate = addTemplate();
+  const handleAddTemplate = async () => {
+      const newTemplate = await addTemplate();
       setSelectedTemplateId(newTemplate.id);
       setCurrentWorkoutView('edit'); // Go directly to edit for a new workout
   }
