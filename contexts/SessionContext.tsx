@@ -1,35 +1,25 @@
 import React, { createContext, useContext, ReactNode } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchSessions, saveSession } from '../api/localApi';
+import useLocalStorage from '../hooks/useLocalStorage';
+import { INITIAL_SESSIONS } from '../constants';
 import type { IWorkoutSession } from '../types';
 
 interface SessionContextType {
   sessions: IWorkoutSession[];
-  isLoading: boolean;
   addSession: (session: IWorkoutSession) => void;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(undefined);
 
 export const SessionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const queryClient = useQueryClient();
+  const [sessions, setSessions] = useLocalStorage<IWorkoutSession[]>('sessions', INITIAL_SESSIONS);
 
-  const { data: sessions = [], isLoading } = useQuery<IWorkoutSession[]>({
-    queryKey: ['sessions'],
-    queryFn: fetchSessions,
-  });
-
-  const addMutation = useMutation({
-    mutationFn: saveSession,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sessions'] });
-    },
-  });
+  const addSession = (session: IWorkoutSession) => {
+    setSessions(prevSessions => [session, ...prevSessions]);
+  };
 
   const value = {
     sessions,
-    isLoading,
-    addSession: addMutation.mutate,
+    addSession,
   };
 
   return (

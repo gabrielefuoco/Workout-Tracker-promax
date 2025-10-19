@@ -1,5 +1,4 @@
 import type { IWorkoutSession, IWorkoutSet, ISessionExercise, IAggregatedData, WorkoutTemplate, Exercise, PerformedSet, SetGroup } from './types';
-// FIX: Changed date-fns import to use named import from the main package to fix call signature errors.
 import { subDays } from 'date-fns';
 
 const now = new Date();
@@ -80,6 +79,7 @@ export const INITIAL_SESSIONS: IWorkoutSession[] = [
   }
 ];
 
+// FIX: Add INITIAL_WORKOUTS constant to provide initial data for workout templates.
 const createPerformedSets = (targets: { reps: number, weight: number, rir?: number | null }[]): PerformedSet[] => {
     return targets.map((t, i) => ({
         id: `ps-${Date.now()}-${i}`,

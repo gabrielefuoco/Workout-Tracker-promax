@@ -51,6 +51,26 @@ export interface IWorkoutSession {
   errorMessage?: string;
 }
 
+// Contratto per template di allenamento
+export interface IWorkoutTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  exercises: Array<{
+    exerciseId: string;
+    name: string;
+    order: number;
+    targetSets: number;
+    targetReps: number;
+    targetWeight?: number;
+    notes?: string;
+  }>;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  lastUsedAt: Timestamp | null;
+  useCount: number;
+}
+// FIX: Add missing type definitions for Workout, Exercise, SetGroup, and PerformedSet.
 // These types are used for workout templates/plans, distinct from workout sessions.
 export interface PerformedSet {
   id: string;

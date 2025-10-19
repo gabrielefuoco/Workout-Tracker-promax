@@ -1,89 +1,95 @@
-import React, { createContext, useContext, ReactNode, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchTemplates, updateTemplateAPI, addTemplateAPI, deleteTemplateAPI, updateTemplateSetAPI } from '../api/localApi';
+import React, { createContext, useContext, ReactNode } from 'react';
+import useLocalStorage from '../hooks/useLocalStorage';
+import { INITIAL_TEMPLATES } from '../constants';
 import type { WorkoutTemplate, PerformedSet } from '../types';
-
-type UpdateTemplateSetPayload = {
-    templateId: string;
-    exerciseId: string;
-    setGroupId: string;
-    setId: string;
-    updates: Partial<PerformedSet>;
-};
 
 interface TemplateContextType {
   templates: WorkoutTemplate[];
-  isLoading: boolean;
   getTemplateById: (id: string) => WorkoutTemplate | undefined;
-  addTemplate: (templateData: Omit<WorkoutTemplate, 'id'>) => Promise<WorkoutTemplate>;
+  addTemplate: () => WorkoutTemplate;
   updateTemplate: (updatedTemplate: WorkoutTemplate) => void;
   deleteTemplate: (templateId: string) => void;
-  updateTemplateSet: (payload: UpdateTemplateSetPayload) => void;
+  updateTemplateSet: (
+    templateId: string, 
+    exerciseId: string, 
+    setGroupId: string, 
+    setId: string, 
+    updates: Partial<PerformedSet>
+  ) => void;
 }
 
 const TemplateContext = createContext<TemplateContextType | undefined>(undefined);
 
 export const TemplateProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const queryClient = useQueryClient();
+  const [templates, setTemplates] = useLocalStorage<WorkoutTemplate[]>('workout-templates', INITIAL_TEMPLATES);
 
-  const { data: templates = [], isLoading } = useQuery<WorkoutTemplate[]>({
-    queryKey: ['templates'],
-    queryFn: fetchTemplates,
-  });
-
-  const addMutation = useMutation({
-    mutationFn: addTemplateAPI,
-    onSuccess: (data) => {
-      // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: updateTemplateAPI,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteTemplateAPI,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['templates'] });
-    },
-  });
-  
-  const updateSetMutation = useMutation({
-    mutationFn: updateTemplateSetAPI,
-     onSuccess: (updatedTemplate) => {
-      // Optimistically update the query data to avoid a full refetch
-      queryClient.setQueryData(['templates'], (oldData: WorkoutTemplate[] | undefined) => {
-        if (!oldData) return [];
-        return oldData.map(t => t.id === updatedTemplate.id ? updatedTemplate : t);
-      });
-    },
-  })
-
-  const getTemplateById = useCallback((id: string) => {
+  const getTemplateById = (id: string) => {
     return templates.find(w => w.id === id);
-  }, [templates]);
+  };
   
-  const addTemplate = useCallback(async (templateData: Omit<WorkoutTemplate, 'id'>): Promise<WorkoutTemplate> => {
+  const addTemplate = (): WorkoutTemplate => {
     const newTemplate: WorkoutTemplate = {
       id: `workout-${Date.now()}`,
-      ...templateData,
+      name: 'New Workout',
+      exercises: []
     };
-    return await addMutation.mutateAsync(newTemplate);
-  }, [addMutation]);
+    setTemplates([...templates, newTemplate]);
+    return newTemplate;
+  };
+
+  const updateTemplate = (updatedTemplate: WorkoutTemplate) => {
+    setTemplates(templates.map(w => w.id === updatedTemplate.id ? updatedTemplate : w));
+  };
+  
+  const deleteTemplate = (templateId: string) => {
+    setTemplates(templates.filter(w => w.id !== templateId));
+  }
+
+  const updateTemplateSet = (
+    templateId: string, 
+    exerciseId: string, 
+    setGroupId: string, 
+    setId: string, 
+    updates: Partial<PerformedSet>
+  ) => {
+    setTemplates(prevTemplates => 
+      prevTemplates.map(template => {
+        if (template.id !== templateId) return template;
+        
+        return {
+          ...template,
+          exercises: template.exercises.map(exercise => {
+            if (exercise.id !== exerciseId) return exercise;
+
+            return {
+              ...exercise,
+              setGroups: exercise.setGroups.map(setGroup => {
+                if (setGroup.id !== setGroupId) return setGroup;
+                
+                return {
+                  ...setGroup,
+                  performedSets: setGroup.performedSets.map(pSet => {
+                    if (pSet.id !== setId) return pSet;
+                    
+                    return { ...pSet, ...updates };
+                  })
+                }
+              })
+            }
+          })
+        }
+      })
+    );
+  };
+
 
   const value = {
     templates,
-    isLoading,
     getTemplateById,
     addTemplate,
-    updateTemplate: updateMutation.mutate,
-    deleteTemplate: deleteMutation.mutate,
-    updateTemplateSet: updateSetMutation.mutate,
+    updateTemplate,
+    deleteTemplate,
+    updateTemplateSet,
   };
 
   return (

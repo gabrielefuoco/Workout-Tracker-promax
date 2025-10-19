@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { WorkoutTemplate, PerformedSet, IWorkoutSession, ISessionExercise } from '../types';
-import Timer from './Timer.tsx';
+import Timer from './Timer';
 import { CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { useTemplates } from '../contexts/WorkoutContext';
 import { useSessions } from '../contexts/SessionContext';
@@ -14,20 +14,10 @@ interface FocusModeProps {
 }
 
 const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onExit }) => {
-  const { getTemplateById, updateTemplateSet, isLoading: templatesLoading } = useTemplates();
+  const { getTemplateById, updateTemplateSet } = useTemplates();
   const { addSession } = useSessions();
-  
-  const [template, setTemplate] = useState<WorkoutTemplate | null>(null);
+  const template = getTemplateById(templateId)!;
 
-  useEffect(() => {
-    if(!templatesLoading) {
-      const foundTemplate = getTemplateById(templateId);
-      if (foundTemplate) {
-        setTemplate(JSON.parse(JSON.stringify(foundTemplate))); // Deep copy to avoid mutation issues
-      }
-    }
-  }, [templateId, templatesLoading, getTemplateById]);
-  
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [isResting, setIsResting] = useState(false);
   const [isWorkoutFinished, setIsWorkoutFinished] = useState(false);
@@ -35,9 +25,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
   const [startTime] = useState(Date.now());
 
   // Flatten sets for easier navigation, memoized for performance
-  const allSets = useMemo(() => {
-    if (!template) return [];
-    return template.exercises.flatMap((ex, exIndex) => 
+  const allSets = useMemo(() => template.exercises.flatMap((ex, exIndex) => 
       ex.setGroups.flatMap(sg => 
           sg.performedSets.map(ps => ({ 
             ...ps, 
@@ -50,13 +38,12 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
             restSeconds: sg.restSeconds
           }))
       )
-  )}, [template]);
+  ), [template]);
   
   const currentSetInfo = allSets[currentSetIndex];
   const currentExerciseIndex = currentSetInfo?.exerciseIndex ?? 0;
 
   useEffect(() => {
-    if (allSets.length === 0) return;
     // Find first uncompleted set and start from there
     const firstUncompletedIndex = allSets.findIndex(set => !set.completed);
     if (firstUncompletedIndex !== -1) {
@@ -66,30 +53,9 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
     }
   }, [allSets]);
 
-  if (templatesLoading || !template) {
-    return <div className="fixed inset-0 bg-background flex items-center justify-center">Loading workout...</div>
-  }
-
   const handleSetCompletion = (completed: boolean) => {
     if (!currentSetInfo) return;
-    updateTemplateSet({
-        templateId: template.id, 
-        exerciseId: currentSetInfo.exerciseId, 
-        setGroupId: currentSetInfo.setGroupId, 
-        setId: currentSetInfo.id, 
-        updates: { completed }
-    });
-    // also update local state to reflect change immediately
-    const newAllSets = [...allSets];
-    newAllSets[currentSetIndex].completed = completed;
-    // This is complex, better to just rely on the refetch for now.
-    // Let's update the local template state for immediate feedback
-     setTemplate(prevTemplate => {
-      if (!prevTemplate) return null;
-      // ... logic to update the set in the local template state
-       return prevTemplate;
-    });
-
+    updateTemplateSet(template.id, currentSetInfo.exerciseId, currentSetInfo.setGroupId, currentSetInfo.id, { completed });
 
     if (completed) {
         setRestDuration(currentSetInfo.restSeconds || 90);
@@ -125,22 +91,13 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
           return;
       }
       
-      updateTemplateSet({
-        templateId: template.id, 
-        exerciseId: currentSetInfo.exerciseId, 
-        setGroupId: currentSetInfo.setGroupId, 
-        setId: currentSetInfo.id, 
-        updates: { [field]: value }
-      });
+      updateTemplateSet(template.id, currentSetInfo.exerciseId, currentSetInfo.setGroupId, currentSetInfo.id, { [field]: value });
   }
 
   const handleFinish = () => {
     const endTime = Date.now();
-    
-    // Use the latest template data from the query for saving session
-    const finalTemplateState = getTemplateById(templateId)!;
 
-    const performedExercises: ISessionExercise[] = finalTemplateState.exercises
+    const performedExercises: ISessionExercise[] = template.exercises
         .map((ex, exIndex) => ({
             id: ex.id,
             exerciseId: ex.id, 
@@ -164,7 +121,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
 
         const newSession: IWorkoutSession = {
             id: `session-${Date.now()}`,
-            name: finalTemplateState.name,
+            name: template.name,
             startTime: startTime,
             endTime: endTime,
             status: 'completed',
@@ -177,17 +134,11 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
     }
 
     // Reset completion status for the next session
-    finalTemplateState.exercises.forEach((ex) => {
+    template.exercises.forEach((ex) => {
         ex.setGroups.forEach((sg) => {
             sg.performedSets.forEach((ps) => {
                 if (ps.completed) {
-                    updateTemplateSet({
-                        templateId: finalTemplateState.id, 
-                        exerciseId: ex.id, 
-                        setGroupId: sg.id, 
-                        setId: ps.id, 
-                        updates: { completed: false }
-                    });
+                    updateTemplateSet(template.id, ex.id, sg.id, ps.id, { completed: false });
                 }
             });
         });
@@ -223,9 +174,8 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
       );
   }
 
-  const completedSetsCount = allSets.filter(s => s.completed).length;
-  const progress = allSets.length > 0 ? (completedSetsCount / allSets.length) * 100 : 0;
-  
+  const progress = ((allSets.filter(s => s.completed).length) / allSets.length) * 100;
+
   return (
     <div className="fixed inset-0 bg-background flex flex-col text-foreground p-4 overflow-y-auto">
       <AnimatePresence>

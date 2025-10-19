@@ -1,15 +1,14 @@
 import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import WorkoutList from './components/WorkoutList.tsx';
-import WorkoutOverview from './components/WorkoutOverview.tsx';
-import EditWorkout from './components/EditWorkout.tsx';
-import FocusMode from './components/FocusMode.tsx';
-import AnalyticsPage from './components/AnalyticsPage.tsx';
-import Modal from './components/Modal.tsx';
-import SettingsModal from './components/SettingsModal.tsx';
-import BottomNav from './components/BottomNav.tsx';
+import WorkoutList from './components/WorkoutList';
+import WorkoutOverview from './components/WorkoutOverview';
+import EditWorkout from './components/EditWorkout';
+import FocusMode from './components/FocusMode';
+import AnalyticsPage from './components/AnalyticsPage';
+import Modal from './components/Modal';
+import SettingsModal from './components/SettingsModal';
+import BottomNav from './components/BottomNav';
 import { useTemplates } from './contexts/WorkoutContext';
-import { WorkoutTemplate } from './types';
 
 type WorkoutView = 'list' | 'overview' | 'edit' | 'focus';
 type Page = 'workouts' | 'analytics';
@@ -19,7 +18,7 @@ const App: React.FC = () => {
   const [currentWorkoutView, setCurrentWorkoutView] = useState<WorkoutView>('list');
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { templates, addTemplate, isLoading } = useTemplates();
+  const { templates, addTemplate } = useTemplates();
 
   const handleSelectTemplate = (id: string) => {
     setSelectedTemplateId(id);
@@ -36,19 +35,10 @@ const App: React.FC = () => {
     setCurrentWorkoutView('focus');
   };
   
-  const handleAddTemplate = async () => {
-      const newTemplateData: Omit<WorkoutTemplate, 'id'> = {
-        name: 'New Workout',
-        exercises: []
-      };
-      try {
-        const newTemplate = await addTemplate(newTemplateData);
-        setSelectedTemplateId(newTemplate.id);
-        setCurrentWorkoutView('edit');
-      } catch (error) {
-        console.error("Failed to add template:", error);
-        // Optionally, show an error message to the user
-      }
+  const handleAddTemplate = () => {
+      const newTemplate = addTemplate();
+      setSelectedTemplateId(newTemplate.id);
+      setCurrentWorkoutView('edit'); // Go directly to edit for a new workout
   }
 
   const handleBackToList = useCallback(() => {
@@ -106,7 +96,6 @@ const App: React.FC = () => {
         return (
             <WorkoutList
               templates={templates}
-              isLoading={isLoading}
               onSelectTemplate={handleSelectTemplate}
               onAddTemplate={handleAddTemplate}
               onOpenSettings={() => setIsSettingsOpen(true)}

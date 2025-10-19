@@ -2,27 +2,23 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import { TemplateProvider } from './contexts/WorkoutContext';
-import { SessionProvider } from './contexts/SessionContext';
 import { ThemeProvider } from './contexts/ThemeContext';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { SessionProvider } from './contexts/SessionContext';
 
-// Crea un'istanza del client
-const queryClient = new QueryClient();
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
+}
 
-const root = ReactDOM.createRoot(
-  document.getElementById('root') as HTMLElement
-);
+const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
-    {/* Wrappa tutto con il QueryClientProvider */}
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
-        <TemplateProvider>
-          <SessionProvider>
-            <App />
-          </SessionProvider>
-        </TemplateProvider>
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <TemplateProvider>
+        <SessionProvider>
+          <App />
+        </SessionProvider>
+      </TemplateProvider>
+    </ThemeProvider>
   </React.StrictMode>
 );
