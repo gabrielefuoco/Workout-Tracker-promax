@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSwipeable } from 'react-swipeable';
 import type { IWorkoutTemplate, IWorkoutSession, ISessionExercise, IWorkoutSet, Timestamp } from '../types';
 import Timer from './Timer';
 import { CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { useWorkoutTemplates } from '../contexts/WorkoutContext';
 import { useSessions } from '../contexts/SessionContext';
 import { calculateAggregatedData } from '../utils/sessionUtils';
+import { useActiveSession } from '../hooks/useActiveSession';
 
 interface FocusModeProps {
   templateId: string;
@@ -16,9 +18,9 @@ interface FocusModeProps {
 const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onExit }) => {
   const { getTemplateById } = useWorkoutTemplates();
   const { addSession } = useSessions();
+  const { activeSession, setActiveSession } = useActiveSession();
   
   const [template, setTemplate] = useState<IWorkoutTemplate | null>(null);
-  const [activeSession, setActiveSession] = useState<IWorkoutSession | null>(null);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [currentSetInput, setCurrentSetInput] = useState({ reps: '', weight: '', rpe: '' });
   const [isResting, setIsResting] = useState(false);
@@ -33,7 +35,9 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
   }, [templateId, getTemplateById]);
 
   useEffect(() => {
-    if (template) {
+    // Se un template è caricato E non c'è una sessione attiva
+    // OPPURE se la sessione attiva non corrisponde al template corrente, ne inizia una nuova.
+    if (template && (!activeSession || activeSession.name !== template.name)) {
       const startTime = Date.now();
       const sessionExercises: ISessionExercise[] = template.exercises.map((ex) => ({
         id: `sess-ex-${ex.exerciseId}-${startTime}`,
@@ -41,7 +45,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
         name: ex.name,
         order: ex.order,
         notes: ex.notes,
-        sets: [], // Start with no sets completed
+        sets: [], // Inizia senza set completati
       }));
 
       const newSession: IWorkoutSession = {
@@ -57,7 +61,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
       setActiveSession(newSession);
       setCurrentExerciseIndex(0);
     }
-  }, [template]);
+  }, [template, activeSession, setActiveSession]);
 
   const handleAddSet = () => {
     const reps = parseInt(currentSetInput.reps, 10);
@@ -82,7 +86,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
         return { ...prevSession, exercises: newExercises };
     });
 
-    // Reset input and start rest timer
+    // Resetta l'input e avvia il timer di riposo
     setCurrentSetInput({ reps: '', weight: '', rpe: '' });
     
     const currentTemplateExercise = template?.exercises[currentExerciseIndex];
@@ -108,7 +112,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
     
     const endTime = Date.now();
 
-    // Filter out exercises where no sets were performed
+    // Filtra gli esercizi senza set registrati
     const performedExercises = activeSession.exercises.filter(ex => ex.sets.length > 0);
     
     const finalSession: IWorkoutSession = {
@@ -126,12 +130,19 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
         await addSession(finalSession);
     }
     
+    setActiveSession(null); // Pulisce la sessione attiva dal localStorage
     onFinishWorkout();
   };
   
   const handleInputValueChange = (field: 'reps' | 'weight' | 'rpe', value: string) => {
     setCurrentSetInput(prev => ({ ...prev, [field]: value }));
   };
+  
+  const handlers = useSwipeable({
+    onSwipedLeft: () => handleNextExercise(),
+    onSwipedRight: () => handlePreviousExercise(),
+    trackMouse: true
+  });
 
   if (!activeSession || !template) {
     return (
@@ -173,7 +184,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ templateId, onFinishWorkout, onEx
   const progress = ((currentExerciseIndex + 1) / activeSession.exercises.length) * 100;
 
   return (
-    <div className="fixed inset-0 bg-background flex flex-col text-foreground p-4 overflow-y-auto">
+    <div {...handlers} className="fixed inset-0 bg-background flex flex-col text-foreground p-4 overflow-y-auto">
       <AnimatePresence>
         {isResting && <Timer initialSeconds={restDuration} onFinish={() => setIsResting(false)} onSkip={() => setIsResting(false)} />}
       </AnimatePresence>

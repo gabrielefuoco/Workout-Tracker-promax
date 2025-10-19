@@ -3,6 +3,7 @@ import { motion, Variants } from 'framer-motion';
 import { useSessions } from '../contexts/SessionContext';
 import { format, formatDistanceToNow } from 'date-fns';
 import { it } from 'date-fns/locale';
+import type { IWorkoutSession } from '../types';
 
 interface SessionListProps {
     onOpenAnalytics: () => void;
@@ -39,6 +40,73 @@ const SessionList: React.FC<SessionListProps> = ({ onOpenAnalytics, onOpenSettin
     };
 
     const sortedSessions = [...sessions].sort((a, b) => (b.startTime || 0) - (a.startTime || 0));
+
+    const renderSessionBadge = (session: IWorkoutSession) => {
+        switch (session.status) {
+            case 'processing':
+                return (
+                    <div className="text-xs font-semibold text-primary flex items-center gap-1.5 flex-shrink-0 bg-primary/10 px-2 py-1 rounded-md">
+                        <i className="ph ph-spinner animate-spin"></i>
+                        <span>Elaborazione...</span>
+                    </div>
+                );
+            case 'failed':
+                return (
+                    <div className="text-xs font-semibold text-destructive-foreground flex items-center gap-1.5 flex-shrink-0 bg-destructive px-2 py-1 rounded-md">
+                        <i className="ph-fill ph-warning-circle"></i>
+                        <span>Fallito</span>
+                    </div>
+                );
+            case 'completed':
+            default:
+                 return (
+                    <div className="text-xs font-semibold text-accent-gold flex items-center gap-1.5 flex-shrink-0 bg-accent-gold/10 px-2 py-1 rounded-md">
+                        <i className="ph-fill ph-clock"></i>
+                        <span>
+                            {formatDistanceToNow(new Date(session.startTime), { addSuffix: true, locale: it })}
+                        </span>
+                    </div>
+                );
+        }
+    }
+
+    const renderSessionStatusContent = (session: IWorkoutSession) => {
+        switch (session.status) {
+            case 'completed':
+                return (
+                    <div className="flex justify-around text-center">
+                        <div>
+                            <p className="text-xs text-muted-foreground font-medium">Volume</p>
+                            <p className="font-bold text-foreground">{session.aggregatedData?.totalVolume.toLocaleString('it-IT')} kg</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground font-medium">Durata</p>
+                            <p className="font-bold text-foreground">{session.aggregatedData?.durationMinutes} min</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-muted-foreground font-medium">Set</p>
+                            <p className="font-bold text-foreground">{session.aggregatedData?.totalSets}</p>
+                        </div>
+                    </div>
+                );
+            case 'processing':
+                return (
+                    <div className="flex items-center justify-center text-center text-muted-foreground h-[41px]">
+                        <i className="ph ph-spinner animate-spin text-xl mr-2"></i>
+                        <span>Elaborazione in corso...</span>
+                    </div>
+                );
+            case 'failed':
+                return (
+                    <div className="text-center text-destructive py-1">
+                        <p className="font-semibold text-sm">Elaborazione fallita</p>
+                        <p className="text-xs break-words">{session.errorMessage}</p>
+                    </div>
+                );
+            default:
+                return null;
+        }
+    }
 
     return (
         <div className="w-full max-w-[600px] mx-auto p-8 sm:p-6 min-h-screen">
@@ -79,28 +147,10 @@ const SessionList: React.FC<SessionListProps> = ({ onOpenAnalytics, onOpenSettin
                                             {format(new Date(session.startTime), 'eeee, d MMM', { locale: it })}
                                         </p>
                                     </div>
-                                    <div className="text-xs font-semibold text-accent-gold flex items-center gap-1.5 flex-shrink-0 bg-accent-gold/10 px-2 py-1 rounded-md">
-                                        <i className="ph-fill ph-clock"></i>
-                                        <span>
-                                            {formatDistanceToNow(new Date(session.startTime), { addSuffix: true, locale: it })}
-                                        </span>
-                                    </div>
+                                    {renderSessionBadge(session)}
                                 </div>
                                 <div className="border-t border-border pt-4 mt-4">
-                                    <div className="flex justify-around text-center">
-                                        <div>
-                                            <p className="text-xs text-muted-foreground font-medium">Volume</p>
-                                            <p className="font-bold text-foreground">{session.aggregatedData?.totalVolume.toLocaleString('it-IT')} kg</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground font-medium">Durata</p>
-                                            <p className="font-bold text-foreground">{session.aggregatedData?.durationMinutes} min</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-xs text-muted-foreground font-medium">Set</p>
-                                            <p className="font-bold text-foreground">{session.aggregatedData?.totalSets}</p>
-                                        </div>
-                                    </div>
+                                    {renderSessionStatusContent(session)}
                                 </div>
                             </div>
                         </div>

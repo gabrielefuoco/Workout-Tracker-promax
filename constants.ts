@@ -96,6 +96,25 @@ export const INITIAL_WORKOUT_TEMPLATES: IWorkoutTemplate[] = [
 
 export const INITIAL_WORKOUT_SESSIONS: IWorkoutSession[] = [
     {
+        id: 'session-processing-1',
+        name: 'Leg Day (Volume)',
+        startTime: now - 1 * oneDay, // Yesterday
+        endTime: null,
+        status: 'processing',
+        exercises: [],
+        aggregatedData: null,
+    },
+    {
+        id: 'session-failed-1',
+        name: 'Full Body Workout',
+        startTime: now - 3 * oneDay,
+        endTime: now - 3 * oneDay + (60 * 60 * 1000),
+        status: 'failed',
+        exercises: [],
+        aggregatedData: null,
+        errorMessage: "L'aggregazione dei dati è fallita a causa di un errore del server."
+    },
+    {
         id: 'session-1',
         name: 'Push Day (Hypertrophy)',
         startTime: now - 2 * oneDay,
