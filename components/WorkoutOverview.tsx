@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ITemplateExercise } from '../types';
+import type { ITemplateExercise } from '../src/contracts/workout.types';
 import { useTemplates } from '../hooks/dataHooks';
 import { ArrowLeftIcon, PencilIcon, ChevronRightIcon } from './icons';
 

@@ -1,4 +1,4 @@
-import type { IWorkoutTemplate, IWorkoutSession } from './types';
+import type { IWorkoutTemplate, IWorkoutSession } from './src/contracts/workout.types';
 
 const now = Date.now();
 const oneDay = 24 * 60 * 60 * 1000;

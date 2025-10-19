@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
-import type { IWorkoutTemplate, ITemplateExercise } from '../types';
+import type { IWorkoutTemplate, ITemplateExercise } from '../src/contracts/workout.types';
 import { ArrowLeftIcon, PlusIcon } from './icons';
 import { useTemplates, useUpdateTemplate, useDeleteTemplate } from '../hooks/dataHooks';
 import EditableExerciseCard from './EditableExercise';

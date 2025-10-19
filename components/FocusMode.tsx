@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 // import { useSwipeable } from 'react-swipeable';
-import type { IWorkoutTemplate, IWorkoutSession, IWorkoutSet } from '../types';
+import type { IWorkoutTemplate, IWorkoutSession, IWorkoutSet } from '../src/contracts/workout.types';
 import Timer from './Timer';
 import { CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 

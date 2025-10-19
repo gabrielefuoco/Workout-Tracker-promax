@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { motion, Variants, AnimatePresence } from 'framer-motion';
-import type { IWorkoutTemplate } from '../types';
+import type { IWorkoutTemplate } from '../src/contracts/workout.types';
 import { useTemplates } from '../hooks/dataHooks';
 
 interface WorkoutListProps {

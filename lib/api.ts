@@ -1,5 +1,5 @@
 import { INITIAL_WORKOUT_SESSIONS, INITIAL_WORKOUT_TEMPLATES } from '../constants';
-import type { IWorkoutSession, IWorkoutTemplate } from '../types';
+import type { IWorkoutSession, IWorkoutTemplate } from '../src/contracts/workout.types';
 import { calculateAggregatedData } from '../utils/sessionUtils';
 
 // Simula la latenza della rete per emulare un ambiente realistico

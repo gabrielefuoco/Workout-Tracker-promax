@@ -1,4 +1,4 @@
-import { IWorkoutSession, ISessionExercise, IAggregatedData, IWorkoutSet } from '../types';
+import { IWorkoutSession, ISessionExercise, IAggregatedData, IWorkoutSet } from '../src/contracts/workout.types';
 
 // This function simulates the 'calculateAggregates' Cloud Function
 export const calculateAggregatedData = (exercises: ISessionExercise[], startTime: number, endTime: number): IAggregatedData => {

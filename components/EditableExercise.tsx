@@ -1,6 +1,6 @@
 import React from 'react';
 import { Reorder, useDragControls } from 'framer-motion';
-import type { ITemplateExercise } from '../types';
+import type { ITemplateExercise } from '../src/contracts/workout.types';
 import { TrashIcon } from './icons';
 
 interface EditableExerciseCardProps {

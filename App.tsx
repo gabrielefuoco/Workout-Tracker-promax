@@ -9,42 +9,24 @@ import Modal from './components/Modal';
 import SettingsModal from './components/SettingsModal';
 import BottomNav from './components/BottomNav';
 import { useTemplates, useAddTemplate, useSaveSession } from './hooks/dataHooks';
-import type { IWorkoutSession, ISessionExercise, IWorkoutTemplate } from './types';
+import type { IWorkoutSession, ISessionExercise, IWorkoutTemplate } from './src/contracts/workout.types';
+import { useNavigationStore } from './src/stores/navigationStore';
 
-type WorkoutView = 'list' | 'overview' | 'edit' | 'focus';
 type Page = 'workouts' | 'analytics';
 
 const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<Page>('workouts');
-  const [currentWorkoutView, setCurrentWorkoutView] = useState<WorkoutView>('list');
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const { currentPage, currentWorkoutView, selectedTemplateId, navigateTo, selectTemplate, editTemplate, startWorkout, navigateToList } = useNavigationStore();
+  const setCurrentPage = navigateTo;
+  
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-  // Stato centralizzato per la sessione di allenamento attiva.
   const [activeSession, setActiveSession] = useState<IWorkoutSession | null>(null);
 
   const { data: templates } = useTemplates();
   const saveSessionMutation = useSaveSession();
-
-  const handleNavigateToList = useCallback(() => {
-    setSelectedTemplateId(null);
-    setCurrentWorkoutView('list');
-  }, []);
   
   const addTemplateMutation = useAddTemplate((newTemplate) => {
-    setSelectedTemplateId(newTemplate.id);
-    setCurrentWorkoutView('edit');
+    editTemplate(newTemplate.id);
   });
-
-  const handleSelectTemplate = (id: string) => {
-    setSelectedTemplateId(id);
-    setCurrentWorkoutView('overview');
-  };
-  
-  const handleEditTemplate = (id: string) => {
-      setSelectedTemplateId(id);
-      setCurrentWorkoutView('edit');
-  };
 
   const handleStartTemplate = (templateId: string) => {
     const template = templates?.find(t => t.id === templateId);
@@ -71,28 +53,18 @@ const App: React.FC = () => {
     };
 
     setActiveSession(newSession);
-    setSelectedTemplateId(template.id);
-    setCurrentWorkoutView('focus');
+    startWorkout(template.id);
   };
   
   const handleAddTemplate = () => {
     addTemplateMutation.mutate();
   }
   
-  const handleDoneEditing = useCallback(() => {
-    setCurrentWorkoutView('overview');
-  }, []);
-
-  const handleWorkoutDeleted = useCallback(() => {
-    setSelectedTemplateId(null);
-    setCurrentWorkoutView('list');
-  }, []);
-  
   const handleFinishWorkout = useCallback(async (finalSession: IWorkoutSession) => {
       await saveSessionMutation.mutateAsync(finalSession);
       setActiveSession(null);
-      handleNavigateToList();
-  }, [saveSessionMutation, handleNavigateToList]);
+      navigateToList();
+  }, [saveSessionMutation, navigateToList]);
 
   const handleExitFocusMode = useCallback(() => {
     if (activeSession && activeSession.exercises.some(e => e.sets.length > 0)) {
@@ -101,8 +73,8 @@ const App: React.FC = () => {
         }
     }
     setActiveSession(null);
-    handleNavigateToList();
-  }, [activeSession, handleNavigateToList]);
+    navigateToList();
+  }, [activeSession, navigateToList]);
 
   const viewVariants = {
     hidden: { opacity: 0, scale: 0.98 },
@@ -118,8 +90,8 @@ const App: React.FC = () => {
             <WorkoutOverview
               templateId={selectedTemplateId}
               onStartTemplate={handleStartTemplate}
-              onBack={handleNavigateToList}
-              onEdit={handleEditTemplate}
+              onBack={navigateToList}
+              onEdit={editTemplate}
             />
         );
       case 'edit':
@@ -127,16 +99,14 @@ const App: React.FC = () => {
         return (
             <EditWorkout
               templateId={selectedTemplateId}
-              onDone={handleDoneEditing}
-              onDeleted={handleWorkoutDeleted}
+              onDone={() => selectedTemplateId && selectTemplate(selectedTemplateId)}
+              onDeleted={navigateToList}
             />
         );
       case 'focus':
         if (!selectedTemplateId || !activeSession) return null;
         const template = templates?.find(t => t.id === selectedTemplateId);
         if (!template) {
-            // Potrebbe accadere se i dati dei template non sono ancora stati caricati.
-            // In un'app più complessa, qui si gestirebbe uno stato di caricamento.
             return null; 
         }
         return (
@@ -153,7 +123,7 @@ const App: React.FC = () => {
       default:
         return (
             <WorkoutList
-              onSelectTemplate={handleSelectTemplate}
+              onSelectTemplate={selectTemplate}
               onAddTemplate={handleAddTemplate}
               onOpenSettings={() => setIsSettingsOpen(true)}
             />

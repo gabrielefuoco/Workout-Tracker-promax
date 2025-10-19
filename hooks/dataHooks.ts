@@ -1,7 +1,7 @@
 // src/hooks/dataHooks.ts
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import * as api from '../lib/api';
-import { IWorkoutTemplate, IWorkoutSession } from '../types';
+import { IWorkoutTemplate, IWorkoutSession } from '../src/contracts/workout.types';
 
 // --- Hooks per i Template ---
 export const useTemplates = () => {
