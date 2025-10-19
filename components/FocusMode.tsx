@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { IWorkoutTemplate, IWorkoutSet } from '../src/contracts/workout.types';
+import { WorkoutSetSchema } from '../src/contracts/workout.schemas';
 import Timer from './Timer';
 import { CheckIcon, XMarkIcon, ChevronLeftIcon, ChevronRightIcon } from './icons';
 import { useActiveSession, useAddSet, useFinishSession } from '../hooks/dataHooks';
@@ -21,6 +22,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
   const [isResting, setIsResting] = useState(false);
   const [restDuration, setRestDuration] = useState(90);
   const [isSummaryScreen, setIsSummaryScreen] = useState(false);
+  const [inputErrors, setInputErrors] = useState<{ reps?: string; weight?: string }>({});
 
   useEffect(() => {
     // Resetta lo stato interno quando inizia una nuova sessione
@@ -34,9 +36,27 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
     if (!session) return;
     const reps = parseInt(currentSetInput.reps, 10);
     const weight = parseFloat(currentSetInput.weight);
-    
-    if (isNaN(reps) || isNaN(weight)) return;
 
+    const validationResult = WorkoutSetSchema.safeParse({
+        reps: isNaN(reps) ? undefined : reps,
+        weight: isNaN(weight) ? undefined : weight,
+        // I valori di default di Zod gestiranno il resto
+        timestamp: Date.now(),
+        isWarmup: false,
+    });
+  
+    if (!validationResult.success) {
+        const formattedErrors = validationResult.error.format();
+        setInputErrors({
+            reps: formattedErrors.reps?._errors[0],
+            weight: formattedErrors.weight?._errors[0],
+        });
+        return; // Stop. Dati non validi.
+    }
+  
+    // Se la validazione passa, pulisci gli errori e procedi
+    setInputErrors({});
+    
     const newSet: IWorkoutSet = {
       reps,
       weight,
@@ -216,7 +236,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
         </div>
 
         {/* Input Form */}
-        <div className="my-6 flex items-center justify-around w-full max-w-lg">
+        <div className="my-6 flex items-start justify-around w-full max-w-lg">
             <div className="text-center">
                 <label htmlFor="reps-input" className="block text-muted-foreground text-sm mb-1">Reps</label>
                 <input 
@@ -224,6 +244,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
                   value={currentSetInput.reps} 
                   onChange={e => handleInputValueChange('reps', e.target.value)} 
                   className="bg-muted/30 rounded-lg px-2 py-1 text-5xl font-bold w-28 text-center outline-none focus:ring-2 focus:ring-primary transition-all" />
+                  {inputErrors.reps && <p className="text-destructive text-xs mt-1">{inputErrors.reps}</p>}
             </div>
             <div className="text-center">
                 <label htmlFor="weight-input" className="block text-muted-foreground text-sm mb-1">Weight (kg)</label>
@@ -232,6 +253,7 @@ const FocusMode: React.FC<FocusModeProps> = ({ template, onFinishWorkout, onExit
                   value={currentSetInput.weight} 
                   onChange={e => handleInputValueChange('weight', e.target.value)} 
                   className="bg-muted/30 rounded-lg px-2 py-1 text-5xl font-bold w-36 text-center outline-none focus:ring-2 focus:ring-primary transition-all" />
+                  {inputErrors.weight && <p className="text-destructive text-xs mt-1">{inputErrors.weight}</p>}
             </div>
             <div className="text-center">
                 <label htmlFor="rpe-input" className="block text-muted-foreground text-sm mb-1">RPE</label>

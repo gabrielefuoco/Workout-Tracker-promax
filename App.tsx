@@ -11,8 +11,10 @@ import BottomNav from './components/BottomNav';
 import { useTemplates, useAddTemplate, useStartSession } from './hooks/dataHooks';
 import type { IWorkoutTemplate } from './src/contracts/workout.types';
 import { useNavigationStore } from './src/stores/navigationStore';
+import { useOnlineStatus } from './hooks/useOnlineStatus';
 
 const App: React.FC = () => {
+  const isOnline = useOnlineStatus();
   const { currentPage, currentWorkoutView, selectedTemplateId, navigateTo, selectTemplate, editTemplate, startWorkout, navigateToList } = useNavigationStore();
   const setCurrentPage = navigateTo;
   
@@ -107,6 +109,18 @@ const App: React.FC = () => {
 
   return (
     <div className="App">
+       <AnimatePresence>
+        {!isOnline && (
+          <motion.div
+            className="bg-destructive text-destructive-foreground text-center p-2 text-sm font-semibold"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+          >
+            Offline: I tuoi progressi sono salvati localmente.
+          </motion.div>
+        )}
+      </AnimatePresence>
        <AnimatePresence mode="wait">
         <motion.div
           key={currentPage === 'workouts' ? currentWorkoutView : currentPage}
