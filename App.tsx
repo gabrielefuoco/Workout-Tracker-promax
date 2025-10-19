@@ -11,16 +11,15 @@ import BottomNav from './components/BottomNav';
 import { useTemplates, useAddTemplate, useSaveSession } from './hooks/dataHooks';
 import type { IWorkoutSession, ISessionExercise, IWorkoutTemplate } from './src/contracts/workout.types';
 import { useNavigationStore } from './src/stores/navigationStore';
-
-type Page = 'workouts' | 'analytics';
+import { useQueryClient } from '@tanstack/react-query';
 
 const App: React.FC = () => {
   const { currentPage, currentWorkoutView, selectedTemplateId, navigateTo, selectTemplate, editTemplate, startWorkout, navigateToList } = useNavigationStore();
   const setCurrentPage = navigateTo;
   
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [activeSession, setActiveSession] = useState<IWorkoutSession | null>(null);
-
+  
+  const queryClient = useQueryClient();
   const { data: templates } = useTemplates();
   const saveSessionMutation = useSaveSession();
   
@@ -52,7 +51,8 @@ const App: React.FC = () => {
       aggregatedData: null,
     };
 
-    setActiveSession(newSession);
+    // Imposta la nuova sessione direttamente nella cache di TanStack Query
+    queryClient.setQueryData(['activeSession'], newSession);
     startWorkout(template.id);
   };
   
@@ -62,19 +62,16 @@ const App: React.FC = () => {
   
   const handleFinishWorkout = useCallback(async (finalSession: IWorkoutSession) => {
       await saveSessionMutation.mutateAsync(finalSession);
-      setActiveSession(null);
+      // Invalida la query per pulire la sessione attiva dalla cache
+      queryClient.invalidateQueries({ queryKey: ['activeSession'] });
       navigateToList();
-  }, [saveSessionMutation, navigateToList]);
+  }, [saveSessionMutation, navigateToList, queryClient]);
 
   const handleExitFocusMode = useCallback(() => {
-    if (activeSession && activeSession.exercises.some(e => e.sets.length > 0)) {
-        if (!window.confirm("Attenzione: i progressi non salvati andranno persi. Uscire comunque?")) {
-            return;
-        }
-    }
-    setActiveSession(null);
+    // Pulisce la sessione attiva dalla cache (equivale a scartarla)
+    queryClient.setQueryData(['activeSession'], undefined);
     navigateToList();
-  }, [activeSession, navigateToList]);
+  }, [queryClient, navigateToList]);
 
   const viewVariants = {
     hidden: { opacity: 0, scale: 0.98 },
@@ -104,17 +101,14 @@ const App: React.FC = () => {
             />
         );
       case 'focus':
-        if (!selectedTemplateId || !activeSession) return null;
+        if (!selectedTemplateId) return null;
         const template = templates?.find(t => t.id === selectedTemplateId);
         if (!template) {
             return null; 
         }
         return (
             <FocusMode
-              key={activeSession.id}
               template={template}
-              activeSession={activeSession}
-              onSessionUpdate={setActiveSession}
               onFinishWorkout={handleFinishWorkout}
               onExit={handleExitFocusMode}
             />
